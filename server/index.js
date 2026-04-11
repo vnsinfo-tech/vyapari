@@ -8,8 +8,19 @@ const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
 const startCron = require('./utils/overdueJob');
 
+// Validate required env vars before starting
+const required = ['MONGO_URI', 'JWT_SECRET', 'JWT_REFRESH_SECRET'];
+const missing = required.filter(k => !process.env[k]);
+if (missing.length) {
+  console.error('FATAL: Missing required environment variables:', missing.join(', '));
+  process.exit(1);
+}
+
 const app = express();
-connectDB().then(() => startCron());
+connectDB().then(() => startCron()).catch(err => {
+  console.error('DB connection failed:', err.message);
+  process.exit(1);
+});
 
 app.use(helmet());
 const allowedOrigins = [
@@ -54,5 +65,8 @@ app.use('/api/backup', require('./routes/backup'));
 
 app.use(errorHandler);
 
+// Health check — Render uses this to verify the service is up
+app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
