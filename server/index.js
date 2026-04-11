@@ -13,13 +13,14 @@ const required = ['MONGO_URI', 'JWT_SECRET', 'JWT_REFRESH_SECRET'];
 const missing = required.filter(k => !process.env[k]);
 if (missing.length) {
   console.error('FATAL: Missing required environment variables:', missing.join(', '));
-  process.exit(1);
+  // Don't exit — let the server start so Render health check passes,
+  // but API routes will return 503 until env vars are set
 }
 
 const app = express();
 connectDB().then(() => startCron()).catch(err => {
   console.error('DB connection failed:', err.message);
-  process.exit(1);
+  // Don't exit — log the error but keep server alive for Render
 });
 
 app.use(helmet());
