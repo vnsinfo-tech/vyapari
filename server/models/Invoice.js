@@ -12,7 +12,7 @@ const invoiceItemSchema = new mongoose.Schema({
   cgst: { type: Number, default: 0 },
   sgst: { type: Number, default: 0 },
   igst: { type: Number, default: 0 },
-  amount: { type: Number }, // calculated server-side
+  amount: { type: Number, default: 0 },
 });
 
 const invoiceSchema = new mongoose.Schema({
@@ -32,7 +32,7 @@ const invoiceSchema = new mongoose.Schema({
   totalIgst: { type: Number, default: 0 },
   totalTax: { type: Number, default: 0 },
   shipping: { type: Number, default: 0 },
-  grandTotal: { type: Number, required: true },
+  grandTotal: { type: Number, default: 0 },
   paidAmount: { type: Number, default: 0 },
   dueAmount: { type: Number, default: 0 },
   paymentMode: { type: String, enum: ['cash', 'upi', 'bank', 'cheque', 'credit'], default: 'cash' },

@@ -74,21 +74,26 @@ exports.createInvoice = async (req, res, next) => {
 exports.updateInvoice = async (req, res, next) => {
   try {
     const { items, isInterState = false, business: _b, invoiceNumber: _n, ...rest } = req.body;
-    if (rest.customer === '') delete rest.customer;
+    if (rest.customer === '' || (rest.customer && typeof rest.customer === 'object')) {
+      rest.customer = rest.customer?._id || undefined;
+    }
 
     let subtotal = 0, totalDiscount = 0, totalCgst = 0, totalSgst = 0, totalIgst = 0;
     const processedItems = (items || []).map(item => {
-      const lineTotal = item.quantity * item.rate;
-      const discountAmt = (lineTotal * (item.discount || 0)) / 100;
+      const { product, ...itemRest } = item;
+      // product may be a populated object — extract just the _id
+      const productId = product && typeof product === 'object' ? product._id : product;
+      const lineTotal = Number(itemRest.quantity) * Number(itemRest.rate);
+      const discountAmt = (lineTotal * (Number(itemRest.discount) || 0)) / 100;
       const taxable = lineTotal - discountAmt;
-      const gst = calcGST(taxable, item.gstRate || 0, isInterState);
+      const gst = calcGST(taxable, Number(itemRest.gstRate) || 0, isInterState);
       subtotal += taxable; totalDiscount += discountAmt;
       totalCgst += gst.cgst; totalSgst += gst.sgst; totalIgst += gst.igst;
-      return { ...item, cgst: gst.cgst, sgst: gst.sgst, igst: gst.igst, amount: taxable + gst.cgst + gst.sgst + gst.igst };
+      return { ...itemRest, ...(productId ? { product: productId } : {}), cgst: gst.cgst, sgst: gst.sgst, igst: gst.igst, amount: taxable + gst.cgst + gst.sgst + gst.igst };
     });
     const totalTax = totalCgst + totalSgst + totalIgst;
-    const grandTotal = subtotal + totalTax + (rest.shipping || 0);
-    const dueAmount = grandTotal - (rest.paidAmount || 0);
+    const grandTotal = subtotal + totalTax + (Number(rest.shipping) || 0);
+    const dueAmount = grandTotal - (Number(rest.paidAmount) || 0);
 
     const updateData = {
       ...rest,
@@ -96,7 +101,7 @@ exports.updateInvoice = async (req, res, next) => {
       items: processedItems,
       subtotal, totalDiscount, totalCgst, totalSgst, totalIgst, totalTax,
       grandTotal, dueAmount,
-      status: dueAmount <= 0 ? 'paid' : (rest.paidAmount > 0 ? 'partial' : 'sent'),
+      status: dueAmount <= 0 ? 'paid' : (Number(rest.paidAmount) > 0 ? 'partial' : 'sent'),
     };
 
     const invoice = await Invoice.findOneAndUpdate(
