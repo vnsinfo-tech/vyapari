@@ -65,6 +65,8 @@ export default function CreateInvoice() {
   const grandTotal = parseFloat((totals.total + shipping).toFixed(2));
   const dueAmount = parseFloat((grandTotal - paidAmount).toFixed(2));
 
+  const getStock = (productId) => products.find(p => p._id === productId)?.stock ?? null;
+
   const setItem = (i, field, value) => {
     const updated = [...items];
     updated[i] = { ...updated[i], [field]: value };
@@ -75,6 +77,12 @@ export default function CreateInvoice() {
     setItems(updated);
   };
 
+  const hasStockError = items.some(item => {
+    if (!item.product) return false;
+    const stock = getStock(item.product);
+    return stock !== null && Number(item.quantity) > stock;
+  });
+
   const handleCustomer = (customerId) => {
     const c = customers.find(c => c._id === customerId);
     if (c) setForm(f => ({ ...f, customer: customerId, customerName: c.name, customerGstin: c.gstin || '', customerAddress: `${c.address?.line1 || ''}, ${c.address?.city || ''}, ${c.address?.state || ''}` }));
@@ -83,6 +91,7 @@ export default function CreateInvoice() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (items.some(i => !i.name || Number(i.quantity) <= 0 || Number(i.rate) <= 0)) return toast.error('Fill all item details');
+    if (hasStockError) return toast.error('One or more items exceed available stock');
     setLoading(true);
     try {
       const payload = { ...form, items, isInterState };
@@ -164,7 +173,14 @@ export default function CreateInvoice() {
                         </select>
                         <input className="input text-xs" value={item.name} onChange={e => setItem(i, 'name', e.target.value)} placeholder="Item name" required />
                       </td>
-                      <td className="py-2 px-1 w-16"><input type="number" min="1" step="0.01" className="input text-xs" value={item.quantity} onChange={e => setItem(i, 'quantity', e.target.value)} /></td>
+                      <td className="py-2 px-1 w-16">
+                        <input type="number" min="1" step="0.01" className={`input text-xs ${item.product && getStock(item.product) !== null && Number(item.quantity) > getStock(item.product) ? 'border-red-500' : ''}`} value={item.quantity} onChange={e => setItem(i, 'quantity', e.target.value)} />
+                        {item.product && getStock(item.product) !== null && (
+                          <span className={`text-xs mt-0.5 block ${Number(item.quantity) > getStock(item.product) ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
+                            Stock: {getStock(item.product)}
+                          </span>
+                        )}
+                      </td>
                       <td className="py-2 px-1 w-24"><input type="number" min="0" step="0.01" className="input text-xs" value={item.rate} onChange={e => setItem(i, 'rate', e.target.value)} /></td>
                       <td className="py-2 px-1 w-16"><input type="number" min="0" max="100" className="input text-xs" value={item.discount} onChange={e => setItem(i, 'discount', e.target.value)} /></td>
                       <td className="py-2 px-1 w-20">
@@ -244,7 +260,7 @@ export default function CreateInvoice() {
 
         <div className="flex gap-3 justify-end">
           <button type="button" onClick={() => navigate('/invoices')} className="btn-secondary">Cancel</button>
-          <button type="submit" disabled={loading} className="btn-primary">{loading ? 'Saving...' : isEdit ? 'Update Invoice' : 'Create Invoice'}</button>
+          <button type="submit" disabled={loading || hasStockError} className="btn-primary disabled:opacity-50">{loading ? 'Saving...' : isEdit ? 'Update Invoice' : 'Create Invoice'}</button>
         </div>
       </form>
     </div>

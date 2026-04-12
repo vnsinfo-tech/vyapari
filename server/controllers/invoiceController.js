@@ -49,6 +49,17 @@ exports.createInvoice = async (req, res, next) => {
     if (rest.customer === '') {
       delete rest.customer;
     }
+
+    // Stock validation
+    for (const item of items) {
+      if (item.product) {
+        const product = await Product.findById(item.product);
+        if (product && item.quantity > product.stock) {
+          return res.status(400).json({ message: `Insufficient stock for "${product.name}". Available: ${product.stock}, Requested: ${item.quantity}` });
+        }
+      }
+    }
+
     let subtotal = 0, totalDiscount = 0, totalCgst = 0, totalSgst = 0, totalIgst = 0;
 
     const processedItems = items.map(item => {
@@ -144,7 +155,18 @@ exports.updateInvoice = async (req, res, next) => {
 
 exports.deleteInvoice = async (req, res, next) => {
   try {
-    await Invoice.findOneAndUpdate({ _id: req.params.id, business: req.user.business._id }, { isDeleted: true });
+    const invoice = await Invoice.findOne({ _id: req.params.id, business: req.user.business._id });
+    if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
+
+    // Restore stock on cancel/delete
+    for (const item of invoice.items) {
+      if (item.product) {
+        await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } });
+        await StockAdjustment.create({ business: req.user.business._id, product: item.product, type: 'in', quantity: item.quantity, reason: 'Invoice Cancelled', reference: invoice.invoiceNumber, createdBy: req.user._id });
+      }
+    }
+
+    await invoice.updateOne({ isDeleted: true });
     res.json({ message: 'Invoice deleted' });
   } catch (err) { next(err); }
 };
