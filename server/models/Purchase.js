@@ -7,7 +7,7 @@ const purchaseItemSchema = new mongoose.Schema({
   unit: String,
   rate: { type: Number, required: true },
   gstRate: { type: Number, default: 0 },
-  amount: { type: Number, required: true },
+  amount: { type: Number, default: 0 },
 });
 
 const purchaseSchema = new mongoose.Schema({
@@ -20,7 +20,7 @@ const purchaseSchema = new mongoose.Schema({
   items: [purchaseItemSchema],
   subtotal: { type: Number, default: 0 },
   totalTax: { type: Number, default: 0 },
-  grandTotal: { type: Number, required: true },
+  grandTotal: { type: Number, default: 0 },
   paidAmount: { type: Number, default: 0 },
   dueAmount: { type: Number, default: 0 },
   paymentMode: { type: String, enum: ['cash', 'upi', 'bank', 'cheque', 'credit'], default: 'cash' },
