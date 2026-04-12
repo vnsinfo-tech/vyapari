@@ -58,13 +58,85 @@ exports.createPurchase = async (req, res, next) => {
 
 exports.updatePurchase = async (req, res, next) => {
   try {
-    const { business: _b, ...updateData } = req.body;
+    const oldPurchase = await Purchase.findOne({ _id: req.params.id, business: req.user.business._id });
+    if (!oldPurchase) return res.status(404).json({ message: 'Purchase not found' });
+
+    const { items: newItems, paidAmount: newPaidAmount, ...rest } = req.body;
+    
+    // Process new items if provided
+    let subtotal = oldPurchase.subtotal, totalTax = oldPurchase.totalTax;
+    const processedItems = newItems ? newItems.map(item => {
+      const amount = item.quantity * item.rate;
+      const tax = (amount * (item.gstRate || 0)) / 100;
+      subtotal += amount;
+      totalTax += tax;
+      return { ...item, amount: amount + tax };
+    }) : oldPurchase.items;
+
+    const grandTotal = subtotal + totalTax;
+    const dueAmount = grandTotal - (newPaidAmount !== undefined ? newPaidAmount : oldPurchase.paidAmount);
+    const status = dueAmount <= 0 ? 'paid' : (newPaidAmount !== undefined && newPaidAmount > 0) ? 'partial' : oldPurchase.status;
+
+    // Prepare update data
+    const updateData = {
+      ...rest,
+      ...(newItems && { items: processedItems }),
+      subtotal,
+      totalTax,
+      grandTotal,
+      dueAmount,
+      status,
+    };
+
     const purchase = await Purchase.findOneAndUpdate(
-      { _id: req.params.id, business: req.user.business._id }, updateData, { new: true, runValidators: true }
+      { _id: req.params.id, business: req.user.business._id },
+      updateData,
+      { new: true, runValidators: true }
     );
-    if (!purchase) return res.status(404).json({ message: 'Purchase not found' });
+
+    // Handle stock adjustments only if items changed
+    if (newItems) {
+      // Reverse old stock
+      for (const item of oldPurchase.items) {
+        if (item.product) {
+          await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity } });
+          await StockAdjustment.create({
+            business: req.user.business._id,
+            product: item.product,
+            type: 'out',
+            quantity: item.quantity,
+            reason: 'Purchase Edit - Reverse',
+            createdBy: req.user._id,
+          });
+        }
+      }
+
+      // Apply new stock
+      for (const item of processedItems) {
+        if (item.product) {
+          await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } });
+          await StockAdjustment.create({
+            business: req.user.business._id,
+            product: item.product,
+            type: 'in',
+            quantity: item.quantity,
+            reason: 'Purchase Edit',
+            createdBy: req.user._id,
+          });
+        }
+      }
+    }
+
+    // Update payment status if paid amount changed
+    if (newPaidAmount !== undefined && newPaidAmount !== oldPurchase.paidAmount) {
+      // Future: Create Payment record if needed
+    }
+
     res.json(purchase);
-  } catch (err) { next(err); }
+  } catch (err) {
+    console.error('Purchase update error:', err);
+    next(err);
+  }
 };
 
 exports.deletePurchase = async (req, res, next) => {
