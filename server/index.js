@@ -68,6 +68,7 @@ app.use('/api/backup', require('./routes/backup'));
 app.use(errorHandler);
 
 // Health check — Render uses this to verify the service is up
+app.get('/', (req, res) => res.json({ status: 'ok' }));
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
 const PORT = process.env.PORT || 5000;
