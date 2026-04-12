@@ -40,7 +40,7 @@ export default function CreateInvoice() {
   }, [id]);
 
   const calcItem = (item) => {
-    const qty = parseFloat(item.quantity) || 0;
+    const qty = parseInt(item.quantity) || 0;
     const rate = parseFloat(item.rate) || 0;
     const disc = parseFloat(item.discount) || 0;
     const gst = parseFloat(item.gstRate) || 0;
@@ -69,6 +69,7 @@ export default function CreateInvoice() {
 
   const setItem = (i, field, value) => {
     const updated = [...items];
+    if (field === 'quantity') value = value.replace(/[^0-9]/g, '');
     updated[i] = { ...updated[i], [field]: value };
     if (field === 'product') {
       const p = products.find(p => p._id === value);
@@ -174,7 +175,7 @@ export default function CreateInvoice() {
                         <input className="input text-xs" value={item.name} onChange={e => setItem(i, 'name', e.target.value)} placeholder="Item name" required />
                       </td>
                       <td className="py-2 px-1 w-16">
-                        <input type="number" min="1" step="0.01" className={`input text-xs ${item.product && getStock(item.product) !== null && Number(item.quantity) > getStock(item.product) ? 'border-red-500' : ''}`} value={item.quantity} onChange={e => setItem(i, 'quantity', e.target.value)} />
+                        <input type="text" inputMode="numeric" pattern="[0-9]*" className={`input text-xs ${item.product && getStock(item.product) !== null && Number(item.quantity) > getStock(item.product) ? 'border-red-500' : ''}`} value={item.quantity} onChange={e => setItem(i, 'quantity', e.target.value)} />
                         {item.product && getStock(item.product) !== null && (
                           <span className={`text-xs mt-0.5 block ${Number(item.quantity) > getStock(item.product) ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
                             Stock: {getStock(item.product)}

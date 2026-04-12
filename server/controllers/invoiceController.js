@@ -45,17 +45,15 @@ exports.createInvoice = async (req, res, next) => {
     const invoiceNumber = `${business.invoicePrefix}-${String(business.invoiceCounter).padStart(4, '0')}`;
 
     const { items, isInterState = false, ...rest } = req.body;
-    // Fix empty customer
-    if (rest.customer === '') {
-      delete rest.customer;
-    }
+    if (rest.customer === '') delete rest.customer;
 
     // Stock validation
     for (const item of items) {
       if (item.product) {
         const product = await Product.findById(item.product);
-        if (product && item.quantity > product.stock) {
-          return res.status(400).json({ message: `Insufficient stock for "${product.name}". Available: ${product.stock}, Requested: ${item.quantity}` });
+        const qty = parseInt(item.quantity || 0);
+        if (product && qty > product.stock) {
+          return res.status(400).json({ message: `Insufficient stock for "${product.name}". Available: ${product.stock}, Requested: ${qty}` });
         }
       }
     }
@@ -63,7 +61,7 @@ exports.createInvoice = async (req, res, next) => {
     let subtotal = 0, totalDiscount = 0, totalCgst = 0, totalSgst = 0, totalIgst = 0;
 
     const processedItems = items.map(item => {
-      const qty = parseFloat(item.quantity || 0);
+      const qty = parseInt(item.quantity || 0);
       const rate = parseFloat(item.rate || 0);
       const lineTotal = qty * rate;
       const discount = parseFloat(item.discount || 0);
@@ -76,7 +74,7 @@ exports.createInvoice = async (req, res, next) => {
       totalCgst += gst.cgst;
       totalSgst += gst.sgst;
       totalIgst += gst.igst;
-      return { ...item, cgst: gst.cgst, sgst: gst.sgst, igst: gst.igst, amount: Number((taxable + gst.cgst + gst.sgst + gst.igst).toFixed(2)) };
+      return { ...item, quantity: qty, cgst: gst.cgst, sgst: gst.sgst, igst: gst.igst, amount: Number((taxable + gst.cgst + gst.sgst + gst.igst).toFixed(2)) };
     });
 
     const totalTax = Number((totalCgst + totalSgst + totalIgst).toFixed(2));
@@ -114,7 +112,7 @@ exports.updateInvoice = async (req, res, next) => {
 
     if (items && Array.isArray(items) && items.length > 0) {
       const processedItems = items.map(item => {
-        const qty = parseFloat(item.quantity || 0);
+        const qty = parseInt(item.quantity || 0);
         const rate = parseFloat(item.rate || 0);
         const lineTotal = qty * rate;
         const discount = parseFloat(item.discount || 0);

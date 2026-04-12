@@ -201,8 +201,8 @@ export default function Inventory() {
             </select>
           </div>
           <div><label className="label">HSN Code</label><input className="input" value={form.hsnCode} onChange={e => setForm(f => ({ ...f, hsnCode: e.target.value }))} /></div>
-          <div><label className="label">Opening Stock</label><input type="number" min="0" className="input" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} /></div>
-          <div><label className="label">Low Stock Alert</label><input type="number" min="0" className="input" value={form.lowStockAlert} onChange={e => setForm(f => ({ ...f, lowStockAlert: e.target.value }))} /></div>
+          <div><label className="label">Opening Stock</label><input type="text" inputMode="numeric" pattern="[0-9]*" className="input" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value.replace(/[^0-9]/g, '') }))} /></div>
+          <div><label className="label">Low Stock Alert</label><input type="text" inputMode="numeric" pattern="[0-9]*" className="input" value={form.lowStockAlert} onChange={e => setForm(f => ({ ...f, lowStockAlert: e.target.value.replace(/[^0-9]/g, '') }))} /></div>
           <div><label className="label">Batch Number</label><input className="input" value={form.batchNumber} onChange={e => setForm(f => ({ ...f, batchNumber: e.target.value }))} /></div>
           <div><label className="label">Expiry Date</label><input type="date" className="input" value={form.expiryDate} onChange={e => setForm(f => ({ ...f, expiryDate: e.target.value }))} /></div>
           <div className="col-span-2 flex gap-3 justify-end pt-2">
@@ -255,12 +255,13 @@ export default function Inventory() {
               {stockAdj.type === 'set' && 'New Stock Value'}
             </label>
             <input
-              type="number"
-              min={stockAdj.type === 'set' ? '0' : '1'}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               className="input text-lg font-semibold"
               value={stockAdj.quantity}
               placeholder={stockAdj.type === 'set' ? `Current: ${stockModal?.stock}` : '0'}
-              onChange={e => setStockAdj(s => ({ ...s, quantity: e.target.value }))}
+              onChange={e => setStockAdj(s => ({ ...s, quantity: e.target.value.replace(/[^0-9]/g, '') }))}
             />
           </div>
 
