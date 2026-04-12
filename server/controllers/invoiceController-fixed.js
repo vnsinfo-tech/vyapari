@@ -91,7 +91,8 @@ exports.createInvoice = async (req, res, next) => {
 
 exports.updateInvoice = async (req, res, next) => {
   try {
-    const { items, isInterState = false, ...updateData } = req.body;
+    const { items, isInterState = false, shipping, paidAmount, paymentMode, notes, customer, customerName, customerGstin, customerAddress, dueDate, invoiceDate, ...simpleUpdate } = req.body;
+    const updateData = { ...simpleUpdate, isInterState };
     let subtotal = 0, totalDiscount = 0, totalCgst = 0, totalSgst = 0, totalIgst = 0;
 
     if (items && Array.isArray(items)) {
