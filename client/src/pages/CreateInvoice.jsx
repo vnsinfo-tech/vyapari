@@ -40,20 +40,30 @@ export default function CreateInvoice() {
   }, [id]);
 
   const calcItem = (item) => {
-    const lineTotal = Number(item.quantity) * Number(item.rate);
-    const discountAmt = (lineTotal * Number(item.discount)) / 100;
+    const qty = parseFloat(item.quantity) || 0;
+    const rate = parseFloat(item.rate) || 0;
+    const disc = parseFloat(item.discount) || 0;
+    const gst = parseFloat(item.gstRate) || 0;
+    const lineTotal = qty * rate;
+    const discountAmt = (lineTotal * disc) / 100;
     const taxable = lineTotal - discountAmt;
-    const tax = (taxable * item.gstRate) / 100;
+    const tax = (taxable * gst) / 100;
     return { taxable, tax, total: taxable + tax };
   };
 
   const totals = items.reduce((acc, item) => {
     const { taxable, tax, total } = calcItem(item);
-    return { subtotal: acc.subtotal + taxable, tax: acc.tax + tax, total: acc.total + total };
+    return {
+      subtotal: acc.subtotal + taxable,
+      tax: acc.tax + tax,
+      total: acc.total + total,
+    };
   }, { subtotal: 0, tax: 0, total: 0 });
 
-  const grandTotal = totals.total + (Number(form.shipping) || 0);
-  const dueAmount = grandTotal - (Number(form.paidAmount) || 0);
+  const shipping = parseFloat(form.shipping) || 0;
+  const paidAmount = parseFloat(form.paidAmount) || 0;
+  const grandTotal = parseFloat((totals.total + shipping).toFixed(2));
+  const dueAmount = parseFloat((grandTotal - paidAmount).toFixed(2));
 
   const setItem = (i, field, value) => {
     const updated = [...items];
@@ -194,7 +204,7 @@ export default function CreateInvoice() {
                 setForm(f => ({
                   ...f,
                   status: s,
-                  paidAmount: s === 'paid' ? String(grandTotal.toFixed(2)) : f.paidAmount,
+                  paidAmount: s === 'paid' ? String(grandTotal) : f.paidAmount,
                 }));
               }}>
                 <option value="">-- Auto --</option>
@@ -222,11 +232,11 @@ export default function CreateInvoice() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span>{formatCurrency(totals.subtotal)}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">{isInterState ? 'IGST' : 'CGST + SGST'}</span><span>{formatCurrency(totals.tax)}</span></div>
-              {form.shipping > 0 && <div className="flex justify-between"><span className="text-gray-500">Shipping</span><span>{formatCurrency(form.shipping)}</span></div>}
+              {shipping > 0 && <div className="flex justify-between"><span className="text-gray-500">Shipping</span><span>{formatCurrency(shipping)}</span></div>}
               <div className="flex justify-between font-bold text-base border-t border-gray-200 dark:border-gray-700 pt-2 mt-2">
                 <span>Grand Total</span><span className="text-primary-600">{formatCurrency(grandTotal)}</span>
               </div>
-              <div className="flex justify-between text-green-600"><span>Paid</span><span>{formatCurrency(form.paidAmount)}</span></div>
+              <div className="flex justify-between text-green-600"><span>Paid</span><span>{formatCurrency(paidAmount)}</span></div>
               <div className="flex justify-between text-red-500 font-semibold"><span>Due</span><span>{formatCurrency(dueAmount)}</span></div>
             </div>
           </div>
