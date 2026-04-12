@@ -57,7 +57,7 @@ exports.createInvoice = async (req, res, next) => {
     const invoice = await Invoice.create({
       ...rest, customer: rest.customer || undefined, business: business._id, invoiceNumber, items: processedItems,
       subtotal, totalDiscount, totalCgst, totalSgst, totalIgst, totalTax, grandTotal, dueAmount, isInterState,
-      status: dueAmount <= 0 ? 'paid' : rest.paidAmount > 0 ? 'partial' : 'sent',
+      status: rest.status || (dueAmount <= 0 ? 'paid' : rest.paidAmount > 0 ? 'partial' : 'sent'),
     });
     for (const item of processedItems) {
       if (item.product) {
@@ -101,7 +101,7 @@ exports.updateInvoice = async (req, res, next) => {
       items: processedItems,
       subtotal, totalDiscount, totalCgst, totalSgst, totalIgst, totalTax,
       grandTotal, dueAmount,
-      status: dueAmount <= 0 ? 'paid' : (Number(rest.paidAmount) > 0 ? 'partial' : 'sent'),
+      status: rest.status || (dueAmount <= 0 ? 'paid' : (Number(rest.paidAmount) > 0 ? 'partial' : 'sent')),
     };
 
     const invoice = await Invoice.findOneAndUpdate(

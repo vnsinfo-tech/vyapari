@@ -22,7 +22,7 @@ export default function CreateInvoice() {
     customerName: '', customerGstin: '', customerAddress: '',
     invoiceDate: new Date().toISOString().split('T')[0],
     dueDate: '', paymentMode: 'cash', paidAmount: '', notes: '',
-    shipping: '', customer: ''
+    shipping: '', customer: '', status: ''
   });
   const [items, setItems] = useState([{ ...emptyItem }]);
 
@@ -32,7 +32,7 @@ export default function CreateInvoice() {
     if (isEdit) {
       invoiceAPI.get(id).then(r => {
         const inv = r.data;
-        setForm({ customerName: inv.customerName, customerGstin: inv.customerGstin || '', customerAddress: inv.customerAddress || '', invoiceDate: inv.invoiceDate?.split('T')[0], dueDate: inv.dueDate?.split('T')[0] || '', paymentMode: inv.paymentMode, paidAmount: String(inv.paidAmount ?? ''), notes: inv.notes || '', shipping: String(inv.shipping ?? ''), customer: inv.customer?._id || '' });
+        setForm({ customerName: inv.customerName, customerGstin: inv.customerGstin || '', customerAddress: inv.customerAddress || '', invoiceDate: inv.invoiceDate?.split('T')[0], dueDate: inv.dueDate?.split('T')[0] || '', paymentMode: inv.paymentMode, paidAmount: String(inv.paidAmount ?? ''), notes: inv.notes || '', shipping: String(inv.shipping ?? ''), customer: inv.customer?._id || '', status: inv.status || '' });
         setItems(inv.items.map(i => ({ name: i.name, quantity: String(i.quantity), rate: String(i.rate), discount: String(i.discount ?? ''), gstRate: i.gstRate, unit: i.unit || 'pcs', product: i.product })));
         setIsInterState(inv.isInterState);
       });
@@ -76,6 +76,7 @@ export default function CreateInvoice() {
     setLoading(true);
     try {
       const payload = { ...form, items, isInterState };
+      if (!form.status) delete payload.status;
       if (isEdit) await invoiceAPI.update(id, payload);
       else await invoiceAPI.create(payload);
       toast.success(isEdit ? 'Invoice updated' : 'Invoice created');
@@ -187,8 +188,24 @@ export default function CreateInvoice() {
               </select>
             </div>
             <div>
+              <label className="label">Status</label>
+              <select className="input" value={form.status} onChange={e => {
+                const s = e.target.value;
+                setForm(f => ({
+                  ...f,
+                  status: s,
+                  paidAmount: s === 'paid' ? String(grandTotal.toFixed(2)) : f.paidAmount,
+                }));
+              }}>
+                <option value="">-- Auto --</option>
+                {['draft', 'sent', 'paid', 'partial', 'overdue', 'cancelled'].map(s => (
+                  <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                ))}
+              </select>
+            </div>
+            <div>
               <label className="label">Amount Paid (₹)</label>
-              <input type="number" min="0" step="0.01" className="input" value={form.paidAmount} onChange={e => setForm(f => ({ ...f, paidAmount: e.target.value }))} />
+              <input type="number" min="0" step="0.01" className="input" value={form.paidAmount} onChange={e => setForm(f => ({ ...f, paidAmount: e.target.value, status: '' }))} />
             </div>
             <div>
               <label className="label">Shipping (₹)</label>
