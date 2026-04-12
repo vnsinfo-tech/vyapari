@@ -36,7 +36,7 @@ export default function CreatePurchase() {
   }, [id]);
 
   const calcItem = (item) => {
-    const base = Number(item.quantity) * Number(item.rate);
+    const base = parseInt(item.quantity || 0) * Number(item.rate);
     const tax = (base * item.gstRate) / 100;
     return { base, tax, total: base + tax };
   };
@@ -51,6 +51,7 @@ export default function CreatePurchase() {
 
   const setItem = (i, field, value) => {
     const updated = [...items];
+    if (field === 'quantity') value = value.replace(/[^0-9]/g, '');
     updated[i] = { ...updated[i], [field]: value };
     if (field === 'product') {
       const p = products.find(p => p._id === value);
@@ -139,7 +140,7 @@ export default function CreatePurchase() {
                         </select>
                         <input className="input text-xs" value={item.name} onChange={e => setItem(i, 'name', e.target.value)} placeholder="Item name" required />
                       </td>
-                      <td className="py-2 px-1 w-16"><input type="number" min="1" className="input text-xs" value={item.quantity} onChange={e => setItem(i, 'quantity', e.target.value)} /></td>
+                      <td className="py-2 px-1 w-16"><input type="text" inputMode="numeric" pattern="[0-9]*" className="input text-xs" value={item.quantity} onChange={e => setItem(i, 'quantity', e.target.value)} /></td>
                       <td className="py-2 px-1 w-24"><input type="number" min="0" className="input text-xs" value={item.rate} onChange={e => setItem(i, 'rate', e.target.value)} /></td>
                       <td className="py-2 px-1 w-20">
                         <select className="input text-xs" value={item.gstRate} onChange={e => setItem(i, 'gstRate', +e.target.value)}>
