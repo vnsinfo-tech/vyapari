@@ -70,14 +70,45 @@ exports.getMe = async (req, res) => {
 exports.forgotPassword = async (req, res, next) => {
   try {
     const user = await User.findOne({ email: req.body.email });
-    // Always return 200 to prevent email enumeration
     if (!user) return res.json({ message: 'If that email exists, a reset link has been sent' });
+
     const token = crypto.randomBytes(20).toString('hex');
     user.resetPasswordToken = crypto.createHash('sha256').update(token).digest('hex');
     user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
     await user.save();
-    // In production: send email with reset link
-    res.json({ message: 'If that email exists, a reset link has been sent', resetToken: token });
+
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const resetUrl = `${clientUrl}/reset-password/${token}`;
+
+    // Send reset email
+    try {
+      const nodemailer = require('nodemailer');
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT) || 587,
+        secure: false,
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+        tls: { rejectUnauthorized: false },
+      });
+      await transporter.sendMail({
+        from: `"Vyapari" <${process.env.SMTP_USER}>`,
+        to: user.email,
+        subject: 'Password Reset Request — Vyapari',
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:500px;margin:auto;padding:24px;border:1px solid #e5e7eb;border-radius:8px">
+            <h2 style="color:#16a34a">Vyapari</h2>
+            <p>Hi <strong>${user.name}</strong>,</p>
+            <p>You requested a password reset. Click the button below to reset your password:</p>
+            <a href="${resetUrl}" style="display:inline-block;margin:16px 0;padding:12px 24px;background:#16a34a;color:#fff;text-decoration:none;border-radius:8px;font-weight:600">Reset Password</a>
+            <p style="color:#6b7280;font-size:12px">This link expires in 10 minutes. If you did not request this, ignore this email.</p>
+            <p style="color:#6b7280;font-size:12px">Or copy this link: ${resetUrl}</p>
+          </div>`,
+      });
+    } catch (emailErr) {
+      console.error('Reset email failed:', emailErr.message);
+    }
+
+    res.json({ message: 'If that email exists, a reset link has been sent' });
   } catch (err) { next(err); }
 };
 

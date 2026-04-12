@@ -52,8 +52,8 @@ export default function CreateInvoice() {
     return { subtotal: acc.subtotal + taxable, tax: acc.tax + tax, total: acc.total + total };
   }, { subtotal: 0, tax: 0, total: 0 });
 
-  const grandTotal = totals.total + Number(form.shipping);
-  const dueAmount = grandTotal - Number(form.paidAmount);
+  const grandTotal = totals.total + (Number(form.shipping) || 0);
+  const dueAmount = grandTotal - (Number(form.paidAmount) || 0);
 
   const setItem = (i, field, value) => {
     const updated = [...items];
