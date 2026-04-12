@@ -12,11 +12,11 @@ exports.getPurchases = async (req, res, next) => {
       Purchase.find(query).select('purchaseNumber billNumber supplierName grandTotal paidAmount dueAmount status purchaseDate').sort(sort).skip((page - 1) * limit).limit(+limit).populate('supplier', 'name').lean(),
       Purchase.countDocuments(query),
     ]);
-    const fixed = data.map(p => ({
-      ...p,
-      paidAmount: p.paidAmount || 0,
-      dueAmount: p.dueAmount > 0 ? p.dueAmount : p.grandTotal - (p.paidAmount || 0),
-    }));
+    const fixed = data.map(p => {
+      const paidAmount = p.paidAmount || 0;
+      const dueAmount = p.dueAmount > 0 ? p.dueAmount : p.grandTotal - paidAmount;
+      return { ...p, paidAmount, dueAmount };
+    });
     res.json({ data: fixed, total, pages: Math.ceil(total / limit) });
   } catch (err) { next(err); }
 };
