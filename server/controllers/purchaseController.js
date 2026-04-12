@@ -9,7 +9,7 @@ exports.getPurchases = async (req, res, next) => {
     if (search) query.supplierName = new RegExp(search, 'i');
     if (status) query.status = status;
     const [data, total] = await Promise.all([
-      Purchase.find(query).sort(sort).skip((page - 1) * limit).limit(+limit).populate('supplier', 'name'),
+      Purchase.find(query).select('purchaseNumber supplierName grandTotal status purchaseDate').sort(sort).skip((page - 1) * limit).limit(+limit).populate('supplier', 'name').lean(),
       Purchase.countDocuments(query),
     ]);
     res.json({ data, total, pages: Math.ceil(total / limit) });
@@ -18,7 +18,7 @@ exports.getPurchases = async (req, res, next) => {
 
 exports.getPurchase = async (req, res, next) => {
   try {
-    const purchase = await Purchase.findOne({ _id: req.params.id, business: req.user.business._id }).populate('supplier');
+    const purchase = await Purchase.findOne({ _id: req.params.id, business: req.user.business._id }).populate('supplier').lean();
     if (!purchase) return res.status(404).json({ message: 'Purchase not found' });
     res.json(purchase);
   } catch (err) { next(err); }

@@ -9,7 +9,7 @@ exports.getProducts = async (req, res, next) => {
     if (category) query.category = category;
     if (lowStock === 'true') query.$expr = { $lte: ['$stock', '$lowStockAlert'] };
     const [data, total] = await Promise.all([
-      Product.find(query).sort(sort).skip((page - 1) * limit).limit(+limit).populate('category', 'name'),
+      Product.find(query).select('name sku barcode category unit salePrice purchasePrice gstRate stock lowStockAlert').sort(sort).skip((page - 1) * limit).limit(+limit).populate('category', 'name').lean(),
       Product.countDocuments(query),
     ]);
     res.json({ data, total, pages: Math.ceil(total / limit) });

@@ -20,4 +20,10 @@ const productSchema = new mongoose.Schema({
   isDeleted: { type: Boolean, default: false },
 }, { timestamps: true });
 
+// Indexes for fast queries
+productSchema.index({ business: 1, isDeleted: 1, createdAt: -1 });
+productSchema.index({ business: 1, isDeleted: 1, name: 1 });
+productSchema.index({ business: 1, isDeleted: 1, category: 1 });
+productSchema.index({ business: 1, isDeleted: 1, stock: 1 });
+
 module.exports = mongoose.model('Product', productSchema);

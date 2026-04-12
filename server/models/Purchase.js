@@ -29,4 +29,9 @@ const purchaseSchema = new mongoose.Schema({
   isDeleted: { type: Boolean, default: false },
 }, { timestamps: true });
 
+// Indexes for fast queries
+purchaseSchema.index({ business: 1, isDeleted: 1, purchaseDate: -1 });
+purchaseSchema.index({ business: 1, isDeleted: 1, status: 1 });
+purchaseSchema.index({ business: 1, supplier: 1, isDeleted: 1 });
+
 module.exports = mongoose.model('Purchase', purchaseSchema);

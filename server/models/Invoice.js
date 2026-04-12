@@ -43,4 +43,11 @@ const invoiceSchema = new mongoose.Schema({
   isDeleted: { type: Boolean, default: false },
 }, { timestamps: true });
 
+// Indexes for fast queries
+invoiceSchema.index({ business: 1, isDeleted: 1, invoiceDate: -1 });
+invoiceSchema.index({ business: 1, status: 1, isDeleted: 1 });
+invoiceSchema.index({ business: 1, customer: 1, isDeleted: 1 });
+invoiceSchema.index({ business: 1, invoiceNumber: 1 }, { unique: true });
+invoiceSchema.index({ business: 1, isDeleted: 1, dueDate: 1 });
+
 module.exports = mongoose.model('Invoice', invoiceSchema);

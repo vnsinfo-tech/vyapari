@@ -12,4 +12,8 @@ const expenseSchema = new mongoose.Schema({
   isDeleted: { type: Boolean, default: false },
 }, { timestamps: true });
 
+// Indexes for fast queries
+expenseSchema.index({ business: 1, isDeleted: 1, date: -1 });
+expenseSchema.index({ business: 1, isDeleted: 1, category: 1 });
+
 module.exports = mongoose.model('Expense', expenseSchema);

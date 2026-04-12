@@ -6,7 +6,7 @@ exports.getSuppliers = async (req, res, next) => {
     const query = { business: req.user.business._id, isDeleted: false };
     if (search) query.$or = [{ name: new RegExp(search, 'i') }, { phone: new RegExp(search, 'i') }];
     const [data, total] = await Promise.all([
-      Supplier.find(query).sort(sort).skip((page - 1) * limit).limit(+limit),
+      Supplier.find(query).select('name phone email gstin address createdAt').sort(sort).skip((page - 1) * limit).limit(+limit).lean(),
       Supplier.countDocuments(query),
     ]);
     res.json({ data, total, pages: Math.ceil(total / limit) });

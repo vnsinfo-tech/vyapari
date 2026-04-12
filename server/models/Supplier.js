@@ -11,4 +11,8 @@ const supplierSchema = new mongoose.Schema({
   isDeleted: { type: Boolean, default: false },
 }, { timestamps: true });
 
+// Indexes for fast queries
+supplierSchema.index({ business: 1, isDeleted: 1, createdAt: -1 });
+supplierSchema.index({ business: 1, isDeleted: 1, name: 1 });
+
 module.exports = mongoose.model('Supplier', supplierSchema);

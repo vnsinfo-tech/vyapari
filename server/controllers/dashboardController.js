@@ -35,9 +35,9 @@ exports.getDashboard = async (req, res, next) => {
         { $group: { _id: null, total: { $sum: '$dueAmount' }, count: { $sum: 1 } } },
       ]),
       Product.find({ business: businessId, isDeleted: false, $expr: { $lte: ['$stock', '$lowStockAlert'] } })
-        .select('name stock lowStockAlert unit').limit(10),
+        .select('name stock lowStockAlert unit').limit(10).lean(),
       Invoice.find({ business: businessId, isDeleted: false })
-        .sort('-invoiceDate').limit(5).populate('customer', 'name'),
+        .select('invoiceNumber customerName grandTotal dueAmount status invoiceDate').sort('-invoiceDate').limit(5).populate('customer', 'name').lean(),
       Invoice.aggregate([
         { $match: { business: bId, isDeleted: false, invoiceDate: { $gte: startOfYear } } },
         { $group: { _id: { month: { $month: '$invoiceDate' } }, total: { $sum: '$grandTotal' }, totalTax: { $sum: '$totalTax' } } },

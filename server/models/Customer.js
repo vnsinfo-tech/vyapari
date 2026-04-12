@@ -12,4 +12,9 @@ const customerSchema = new mongoose.Schema({
   isDeleted: { type: Boolean, default: false },
 }, { timestamps: true });
 
+// Indexes for fast queries
+customerSchema.index({ business: 1, isDeleted: 1, createdAt: -1 });
+customerSchema.index({ business: 1, isDeleted: 1, name: 1 });
+customerSchema.index({ business: 1, isDeleted: 1, phone: 1 });
+
 module.exports = mongoose.model('Customer', customerSchema);

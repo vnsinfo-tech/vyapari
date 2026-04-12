@@ -23,7 +23,7 @@ exports.getInvoices = async (req, res, next) => {
     if (endDate) query.invoiceDate.$lte = new Date(endDate);
 
     const [invoices, total] = await Promise.all([
-      Invoice.find(query).sort(sort).skip((page - 1) * limit).limit(+limit).populate('customer', 'name phone'),
+      Invoice.find(query).sort(sort).skip((page - 1) * limit).limit(+limit).populate('customer', 'name phone').lean(),
       Invoice.countDocuments(query),
     ]);
     res.json({ invoices, total, pages: Math.ceil(total / limit) });
@@ -33,7 +33,7 @@ exports.getInvoices = async (req, res, next) => {
 exports.getInvoice = async (req, res, next) => {
   try {
     const invoice = await Invoice.findOne({ _id: req.params.id, business: req.user.business._id })
-      .populate('customer').populate('items.product');
+      .populate('customer').populate('items.product').lean();
     if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
     res.json(invoice);
   } catch (err) { next(err); }

@@ -9,7 +9,7 @@ exports.getExpenses = async (req, res, next) => {
     if (startDate) query.date.$gte = new Date(startDate);
     if (endDate) query.date.$lte = new Date(endDate);
     const [data, total] = await Promise.all([
-      Expense.find(query).sort(sort).skip((page - 1) * limit).limit(+limit),
+      Expense.find(query).select('title amount category date createdAt').sort(sort).skip((page - 1) * limit).limit(+limit).lean(),
       Expense.countDocuments(query),
     ]);
     res.json({ data, total, pages: Math.ceil(total / limit) });
