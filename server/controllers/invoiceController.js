@@ -14,13 +14,14 @@ const calcGST = (amount, gstRate, isInterState) => {
 
 exports.getInvoices = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, search, status, startDate, endDate, sort = '-invoiceDate' } = req.query;
+    const { page = 1, limit = 20, search, status, startDate, endDate } = req.query;
+    const sort = req.query.sort === 'invoiceDate' ? 'invoiceDate' : '-invoiceDate';
     const query = { business: req.user.business._id, isDeleted: false };
     if (search) query.$or = [{ invoiceNumber: new RegExp(search, 'i') }, { customerName: new RegExp(search, 'i') }];
-    if (status) query.status = status;
+    if (status && ['draft','sent','paid','partial','overdue','cancelled'].includes(status)) query.status = status;
     if (startDate || endDate) query.invoiceDate = {};
     if (startDate) query.invoiceDate.$gte = new Date(startDate);
-    if (endDate) query.invoiceDate.$lte = new Date(endDate);
+    if (endDate) { const end = new Date(endDate); end.setHours(23, 59, 59, 999); query.invoiceDate.$lte = end; }
 
     const [invoices, total] = await Promise.all([
       Invoice.find(query).sort(sort).skip((page - 1) * limit).limit(+limit).populate('customer', 'name phone').lean(),

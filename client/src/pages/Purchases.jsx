@@ -11,6 +11,9 @@ export default function Purchases() {
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [sort, setSort] = useState('-purchaseDate');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [deleteId, setDeleteId] = useState(null);
@@ -18,13 +21,17 @@ export default function Purchases() {
   const fetch = async () => {
     setLoading(true);
     try {
-      const { data } = await purchaseAPI.list({ page, search });
+      const params = { page, sort };
+      if (search) params.search = search;
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      const { data } = await purchaseAPI.list(params);
       setPurchases(data.data);
       setPages(data.pages);
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { fetch(); }, [page, search]);
+  useEffect(() => { fetch(); }, [page, search, sort, startDate, endDate]);
 
   useEffect(() => { purchaseAPI.fixAmounts(); }, []);
 
@@ -41,7 +48,18 @@ export default function Purchases() {
         <button onClick={() => navigate('/purchases/new')} className="btn-primary flex items-center gap-2 text-sm"><MdAdd size={18} /> New Purchase</button>
       </div>
       <div className="card">
-        <div className="relative mb-4"><MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} /><input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="input pl-9" placeholder="Search by supplier..." /></div>
+        <div className="flex flex-col sm:flex-row gap-3 mb-4 flex-wrap">
+          <div className="relative flex-1 min-w-[160px]"><MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} /><input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="input pl-9" placeholder="Search by supplier..." /></div>
+          <select value={sort} onChange={e => { setSort(e.target.value); setPage(1); }} className="input w-full sm:w-40">
+            <option value="-purchaseDate">Newest First</option>
+            <option value="purchaseDate">Oldest First</option>
+          </select>
+          <input type="date" className="input w-full sm:w-36" value={startDate} onChange={e => { setStartDate(e.target.value); setPage(1); }} title="From date" />
+          <input type="date" className="input w-full sm:w-36" value={endDate} onChange={e => { setEndDate(e.target.value); setPage(1); }} title="To date" />
+          {(startDate || endDate || sort !== '-purchaseDate') && (
+            <button onClick={() => { setSort('-purchaseDate'); setStartDate(''); setEndDate(''); setPage(1); }} className="text-xs text-red-500 hover:underline whitespace-nowrap">Clear Filters</button>
+          )}
+        </div>
         {loading ? <Spinner /> : purchases.length === 0 ? <EmptyState title="No purchases yet" action={<button onClick={() => navigate('/purchases/new')} className="btn-primary text-sm">Add Purchase</button>} /> : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

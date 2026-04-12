@@ -5,7 +5,9 @@ const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 exports.getCustomers = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, search, sort = '-createdAt' } = req.query;
+    const { page = 1, limit = 20, search } = req.query;
+    const ALLOWED_SORT = ['name', '-name', '-createdAt', 'createdAt'];
+    const sort = ALLOWED_SORT.includes(req.query.sort) ? req.query.sort : '-createdAt';
     const query = { business: req.user.business._id, isDeleted: false };
     if (search) query.$or = [{ name: new RegExp(escapeRegex(search), 'i') }, { phone: new RegExp(escapeRegex(search), 'i') }];
     const [data, total] = await Promise.all([

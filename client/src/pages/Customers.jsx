@@ -13,6 +13,7 @@ export default function Customers() {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [sort, setSort] = useState('name');
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [modal, setModal] = useState(false);
@@ -24,13 +25,15 @@ export default function Customers() {
   const fetch = async () => {
     setLoading(true);
     try {
-      const { data } = await customerAPI.list({ page, search });
+      const params = { page, sort };
+      if (search) params.search = search;
+      const { data } = await customerAPI.list(params);
       setCustomers(data.data);
       setPages(data.pages);
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { fetch(); }, [page, search]);
+  useEffect(() => { fetch(); }, [page, search, sort]);
 
   const openEdit = (c) => { setForm({ name: c.name, phone: c.phone || '', email: c.email || '', gstin: c.gstin || '', address: c.address || emptyForm.address }); setEditId(c._id); setModal(true); };
   const openNew = () => { setForm(emptyForm); setEditId(null); setModal(true); };
@@ -66,9 +69,17 @@ export default function Customers() {
       </div>
 
       <div className="card">
-        <div className="relative mb-4">
-          <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-          <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="input pl-9" placeholder="Search by name or phone..." />
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <div className="relative flex-1">
+            <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="input pl-9" placeholder="Search by name or phone..." />
+          </div>
+          <select value={sort} onChange={e => { setSort(e.target.value); setPage(1); }} className="input w-full sm:w-44">
+            <option value="name">Name A → Z</option>
+            <option value="-name">Name Z → A</option>
+            <option value="-createdAt">Newest First</option>
+            <option value="createdAt">Oldest First</option>
+          </select>
         </div>
 
         {loading ? <Spinner /> : customers.length === 0 ? (

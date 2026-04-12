@@ -13,6 +13,10 @@ export default function Expenses() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
+  const [sort, setSort] = useState('-date');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editId, setEditId] = useState(null);
@@ -22,13 +26,17 @@ export default function Expenses() {
   const fetch = async () => {
     setLoading(true);
     try {
-      const { data } = await expenseAPI.list({ page });
+      const params = { page, sort };
+      if (filterCategory) params.category = filterCategory;
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      const { data } = await expenseAPI.list(params);
       setExpenses(data.data);
       setPages(data.pages);
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { fetch(); }, [page]);
+  useEffect(() => { fetch(); }, [page, sort, startDate, endDate, filterCategory]);
 
   const openEdit = (e) => { setForm({ category: e.category, amount: e.amount, date: e.date?.split('T')[0], paymentMode: e.paymentMode, description: e.description || '', isRecurring: e.isRecurring }); setEditId(e._id); setModal(true); };
 
@@ -61,6 +69,21 @@ export default function Expenses() {
       </div>
 
       <div className="card">
+        <div className="flex flex-col sm:flex-row gap-3 mb-4 flex-wrap">
+          <select value={filterCategory} onChange={e => { setFilterCategory(e.target.value); setPage(1); }} className="input w-full sm:w-40">
+            <option value="">All Categories</option>
+            {EXPENSE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <select value={sort} onChange={e => { setSort(e.target.value); setPage(1); }} className="input w-full sm:w-40">
+            <option value="-date">Newest First</option>
+            <option value="date">Oldest First</option>
+          </select>
+          <input type="date" className="input w-full sm:w-36" value={startDate} onChange={e => { setStartDate(e.target.value); setPage(1); }} title="From date" />
+          <input type="date" className="input w-full sm:w-36" value={endDate} onChange={e => { setEndDate(e.target.value); setPage(1); }} title="To date" />
+          {(startDate || endDate || filterCategory || sort !== '-date') && (
+            <button onClick={() => { setSort('-date'); setStartDate(''); setEndDate(''); setFilterCategory(''); setPage(1); }} className="text-xs text-red-500 hover:underline whitespace-nowrap">Clear Filters</button>
+          )}
+        </div>
         {loading ? <Spinner /> : expenses.length === 0 ? (
           <EmptyState title="No expenses recorded" action={<button onClick={() => setModal(true)} className="btn-primary text-sm">Add Expense</button>} />
         ) : (

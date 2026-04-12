@@ -23,6 +23,9 @@ export default function Invoices() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
+  const [sort, setSort] = useState('-invoiceDate');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [deleteId, setDeleteId] = useState(null);
@@ -30,14 +33,19 @@ export default function Invoices() {
   const fetchInvoices = async () => {
     setLoading(true);
     try {
-      const { data } = await invoiceAPI.list({ page, search, status });
+      const params = { page, sort };
+      if (search) params.search = search;
+      if (status) params.status = status;
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      const { data } = await invoiceAPI.list(params);
       setInvoices(data.invoices || []);
       setPages(data.pages || 1);
     } catch { setInvoices([]); }
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchInvoices(); }, [page, search, status]);
+  useEffect(() => { fetchInvoices(); }, [page, search, status, sort, startDate, endDate]);
 
   const handleDelete = async () => {
     await invoiceAPI.delete(deleteId);
@@ -91,17 +99,26 @@ export default function Invoices() {
       </div>
 
       <div className="card">
-        <div className="flex flex-col sm:flex-row gap-3 mb-4">
-          <div className="relative flex-1">
+        <div className="flex flex-col sm:flex-row gap-3 mb-4 flex-wrap">
+          <div className="relative flex-1 min-w-[160px]">
             <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="input pl-9" placeholder="Search invoice or customer..." />
           </div>
-          <select value={status} onChange={e => { setStatus(e.target.value); setPage(1); }} className="input w-full sm:w-40">
+          <select value={status} onChange={e => { setStatus(e.target.value); setPage(1); }} className="input w-full sm:w-36">
             <option value="">All Status</option>
             {['draft', 'sent', 'paid', 'partial', 'overdue', 'cancelled'].map(s => (
               <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
             ))}
           </select>
+          <select value={sort} onChange={e => { setSort(e.target.value); setPage(1); }} className="input w-full sm:w-40">
+            <option value="-invoiceDate">Newest First</option>
+            <option value="invoiceDate">Oldest First</option>
+          </select>
+          <input type="date" className="input w-full sm:w-36" value={startDate} onChange={e => { setStartDate(e.target.value); setPage(1); }} placeholder="From" title="From date" />
+          <input type="date" className="input w-full sm:w-36" value={endDate} onChange={e => { setEndDate(e.target.value); setPage(1); }} placeholder="To" title="To date" />
+          {(startDate || endDate || status || sort !== '-invoiceDate') && (
+            <button onClick={() => { setStatus(''); setSort('-invoiceDate'); setStartDate(''); setEndDate(''); setPage(1); }} className="text-xs text-red-500 hover:underline whitespace-nowrap">Clear Filters</button>
+          )}
         </div>
 
         {loading ? <Spinner /> : invoices.length === 0 ? (

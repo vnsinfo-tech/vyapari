@@ -15,7 +15,7 @@ export const authAPI = {
 export const dashboardAPI = { get: () => cachedGet('/dashboard') };
 
 export const invoiceAPI = {
-  list: (params) => cachedGet('/invoices', { params }),
+  list: (params) => api.get('/invoices', { params }),
   get: (id) => cachedGet(`/invoices/${id}`),
   create: async (data) => { const r = await api.post('/invoices', data); bust('/invoices', '/dashboard'); return r; },
   update: async (id, data) => { const r = await api.put(`/invoices/${id}`, data); bust('/invoices', '/dashboard'); return r; },
@@ -28,7 +28,7 @@ export const invoiceAPI = {
 };
 
 export const customerAPI = {
-  list: (params) => cachedGet('/customers', { params }),
+  list: (params) => api.get('/customers', { params }),
   get: (id) => cachedGet(`/customers/${id}`),
   create: async (data) => { const r = await api.post('/customers', data); bust('/customers', '/dashboard'); return r; },
   update: async (id, data) => { const r = await api.put(`/customers/${id}`, data); bust('/customers'); return r; },
@@ -69,7 +69,7 @@ export const purchaseAPI = {
 };
 
 export const expenseAPI = {
-  list: (params) => cachedGet('/expenses', { params }),
+  list: (params) => api.get('/expenses', { params }),
   create: async (data) => { const r = await api.post('/expenses', data); bust('/expenses', '/dashboard'); return r; },
   update: async (id, data) => { const r = await api.put(`/expenses/${id}`, data); bust('/expenses'); return r; },
   delete: async (id) => { const r = await api.delete(`/expenses/${id}`); bust('/expenses', '/dashboard'); return r; },

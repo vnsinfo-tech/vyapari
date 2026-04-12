@@ -2,14 +2,15 @@ const Expense = require('../models/Expense');
 
 exports.getExpenses = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, category, startDate, endDate, sort = '-date' } = req.query;
+    const { page = 1, limit = 20, category, startDate, endDate } = req.query;
+    const sort = req.query.sort === 'date' ? 'date' : '-date';
     const query = { business: req.user.business._id, isDeleted: false };
     if (category) query.category = category;
     if (startDate || endDate) query.date = {};
     if (startDate) query.date.$gte = new Date(startDate);
-    if (endDate) query.date.$lte = new Date(endDate);
+    if (endDate) { const end = new Date(endDate); end.setHours(23, 59, 59, 999); query.date.$lte = end; }
     const [data, total] = await Promise.all([
-      Expense.find(query).select('title amount category date createdAt').sort(sort).skip((page - 1) * limit).limit(+limit).lean(),
+      Expense.find(query).sort(sort).skip((page - 1) * limit).limit(+limit).lean(),
       Expense.countDocuments(query),
     ]);
     res.json({ data, total, pages: Math.ceil(total / limit) });

@@ -6,10 +6,14 @@ const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 exports.getPurchases = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, search, status, sort = '-purchaseDate' } = req.query;
+    const { page = 1, limit = 20, search, status, startDate, endDate } = req.query;
+    const sort = req.query.sort === 'purchaseDate' ? 'purchaseDate' : '-purchaseDate';
     const query = { business: req.user.business._id, isDeleted: false };
     if (search) query.supplierName = new RegExp(escapeRegex(search), 'i');
-    if (status) query.status = status;
+    if (status && ['paid','partial','pending'].includes(status)) query.status = status;
+    if (startDate || endDate) query.purchaseDate = {};
+    if (startDate) query.purchaseDate.$gte = new Date(startDate);
+    if (endDate) { const end = new Date(endDate); end.setHours(23, 59, 59, 999); query.purchaseDate.$lte = end; }
     const [data, total] = await Promise.all([
       Purchase.find(query).select('purchaseNumber billNumber supplierName grandTotal paidAmount dueAmount status purchaseDate').sort(sort).skip((page - 1) * limit).limit(+limit).populate('supplier', 'name').lean(),
       Purchase.countDocuments(query),
