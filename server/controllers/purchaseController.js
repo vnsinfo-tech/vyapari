@@ -9,7 +9,7 @@ exports.getPurchases = async (req, res, next) => {
     if (search) query.supplierName = new RegExp(search, 'i');
     if (status) query.status = status;
     const [data, total] = await Promise.all([
-      Purchase.find(query).select('purchaseNumber supplierName grandTotal status purchaseDate').sort(sort).skip((page - 1) * limit).limit(+limit).populate('supplier', 'name').lean(),
+      Purchase.find(query).select('purchaseNumber billNumber supplierName grandTotal paidAmount dueAmount status purchaseDate').sort(sort).skip((page - 1) * limit).limit(+limit).populate('supplier', 'name').lean(),
       Purchase.countDocuments(query),
     ]);
     res.json({ data, total, pages: Math.ceil(total / limit) });
