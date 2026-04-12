@@ -33,7 +33,9 @@ exports.createPurchase = async (req, res, next) => {
       const tax = (amount * (item.gstRate || 0)) / 100;
       subtotal += amount;
       totalTax += tax;
-      return { ...item, amount: amount + tax };
+      const processed = { ...item, amount: amount + tax };
+      if (!processed.product) delete processed.product;
+      return processed;
     });
     const grandTotal = subtotal + totalTax;
     const dueAmount = grandTotal - (rest.paidAmount || 0);
@@ -59,7 +61,7 @@ exports.createPurchase = async (req, res, next) => {
 exports.updatePurchase = async (req, res, next) => {
   try {
     const { business: _b, items, ...rest } = req.body;
-    if (rest.supplier === '') delete rest.supplier;
+    if (!rest.supplier) delete rest.supplier;
 
     const oldPurchase = await Purchase.findOne({ _id: req.params.id, business: req.user.business._id });
     if (!oldPurchase) return res.status(404).json({ message: 'Purchase not found' });
@@ -75,7 +77,9 @@ exports.updatePurchase = async (req, res, next) => {
       const tax = (amount * gstRate) / 100;
       subtotal += amount;
       totalTax += tax;
-      return { ...item, amount: amount + tax };
+      const processed = { ...item, amount: amount + tax };
+      if (!processed.product) delete processed.product;
+      return processed;
     });
     const grandTotal = subtotal + totalTax;
     const paidAmount = parseFloat(rest.paidAmount) || 0;
