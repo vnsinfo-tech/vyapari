@@ -91,9 +91,38 @@ exports.createInvoice = async (req, res, next) => {
 
 exports.updateInvoice = async (req, res, next) => {
   try {
+    const { items, isInterState = false, ...updateData } = req.body;
+    let subtotal = 0, totalDiscount = 0, totalCgst = 0, totalSgst = 0, totalIgst = 0;
+
+    if (items && Array.isArray(items)) {
+      const processedItems = items.map(item => {
+        const lineTotal = item.quantity * item.rate;
+        const discountAmt = (lineTotal * (item.discount || 0)) / 100;
+        const taxable = lineTotal - discountAmt;
+        const gst = calcGST(taxable, item.gstRate || 0, isInterState);
+        subtotal += taxable;
+        totalDiscount += discountAmt;
+        totalCgst += gst.cgst;
+        totalSgst += gst.sgst;
+        totalIgst += gst.igst;
+        return { ...item, cgst: gst.cgst, sgst: gst.sgst, igst: gst.igst, amount: taxable + gst.cgst + gst.sgst + gst.igst };
+      });
+      updateData.items = processedItems;
+      updateData.subtotal = subtotal;
+      updateData.totalDiscount = totalDiscount;
+      updateData.totalCgst = totalCgst;
+      updateData.totalSgst = totalSgst;
+      updateData.totalIgst = totalIgst;
+      updateData.totalTax = totalCgst + totalSgst + totalIgst;
+      updateData.grandTotal = subtotal + (totalCgst + totalSgst + totalIgst) + (updateData.shipping || 0);
+      updateData.dueAmount = updateData.grandTotal - (updateData.paidAmount || 0);
+      updateData.status = updateData.dueAmount <= 0 ? 'paid' : updateData.paidAmount > 0 ? 'partial' : 'sent';
+      updateData.isInterState = isInterState;
+    }
+
     const invoice = await Invoice.findOneAndUpdate(
       { _id: req.params.id, business: req.user.business._id },
-      req.body, { new: true }
+      updateData, { new: true, runValidators: true }
     );
     if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
     res.json(invoice);
