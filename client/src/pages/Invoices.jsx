@@ -6,6 +6,17 @@ import { formatCurrency, formatDate } from '../utils';
 import { MdAdd, MdSearch, MdDelete, MdEdit, MdPrint, MdWhatsapp } from 'react-icons/md';
 import toast from 'react-hot-toast';
 
+const STATUS_COLORS = {
+  draft: 'text-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-300',
+  sent: 'text-blue-600 bg-blue-50 dark:bg-blue-900/30',
+  paid: 'text-green-600 bg-green-50 dark:bg-green-900/30',
+  partial: 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/30',
+  overdue: 'text-red-600 bg-red-50 dark:bg-red-900/30',
+  cancelled: 'text-gray-400 bg-gray-100 dark:bg-gray-700',
+};
+
+const STATUSES = ['draft', 'sent', 'paid', 'partial', 'overdue', 'cancelled'];
+
 export default function Invoices() {
   const navigate = useNavigate();
   const [invoices, setInvoices] = useState([]);
@@ -33,6 +44,19 @@ export default function Invoices() {
     toast.success('Invoice deleted');
     setDeleteId(null);
     fetchInvoices();
+  };
+
+  const handleStatusChange = async (inv, newStatus) => {
+    try {
+      const paidAmount = newStatus === 'paid'
+        ? inv.grandTotal
+        : newStatus === 'partial' ? inv.paidAmount
+        : newStatus === 'draft' || newStatus === 'cancelled' ? 0
+        : inv.paidAmount;
+      await invoiceAPI.update(inv._id, { ...inv, status: newStatus, paidAmount, customer: inv.customer?._id || inv.customer });
+      toast.success('Status updated');
+      fetchInvoices();
+    } catch { toast.error('Failed to update status'); }
   };
 
   const handleWhatsApp = (inv) => {
@@ -100,7 +124,17 @@ export default function Invoices() {
                     <td className="py-3 px-2 text-gray-500">{formatDate(inv.invoiceDate)}</td>
                     <td className="py-3 px-2 text-gray-500">{formatDate(inv.dueDate)}</td>
                     <td className="py-3 px-2 font-semibold text-gray-900 dark:text-white">{formatCurrency(inv.grandTotal)}</td>
-                    <td className="py-3 px-2"><Badge status={inv.status} /></td>
+                    <td className="py-3 px-2">
+                      <select
+                        value={inv.status}
+                        onChange={e => handleStatusChange(inv, e.target.value)}
+                        className={`text-xs font-semibold rounded-full px-2 py-1 border-0 outline-none cursor-pointer ${STATUS_COLORS[inv.status] || ''}`}
+                      >
+                        {STATUSES.map(s => (
+                          <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                        ))}
+                      </select>
+                    </td>
                     <td className="py-3 px-2">
                       <div className="flex items-center gap-1">
                         <button onClick={() => navigate(`/invoices/${inv._id}/edit`)} title="Edit" className="p-1.5 text-gray-400 hover:text-primary-600 rounded"><MdEdit size={16} /></button>
