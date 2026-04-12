@@ -113,12 +113,15 @@ function AppRoutes() {
   );
 }
 
+import { SpeedInsights } from '@vercel/speed-insights/react';
+
 export default function App() {
   return (
     <Provider store={store}>
       <BrowserRouter>
         <AppRoutes />
         <Toaster position="top-right" toastOptions={{ duration: 3000, style: { fontSize: '14px' } }} />
+        <SpeedInsights />
       </BrowserRouter>
     </Provider>
   );
