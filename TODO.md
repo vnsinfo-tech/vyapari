@@ -1,20 +1,15 @@
-# Performance Optimization Task - Progress Tracker
+# INVOICE GRAND TOTAL FIX PLAN
 
-## Completed Steps ✅
-- [x] Added database indexes to all models (Invoice.js, Product.js, Customer.js, Purchase.js, Expense.js, Supplier.js)
-- [x] Optimized MongoDB connection pool settings (db.js)
-- [x] Added 30-second in-memory cache for GET requests (axios.js)
-- [x] Updated services.js: 
-  - Removed duplicate exports
-  - Added cachedGet to read-heavy list endpoints (products.list, customers.list, suppliers.list, staff.list)
-  - Verified dashboard, categories, settings, details already cached
+**Status: In Progress**
 
-## Remaining Steps
-- [ ] Test frontend pages (Dashboard, Inventory, Customers, Settings) for caching performance
-- [ ] Restart dev servers: `npm run dev`
-- [ ] Verify no console errors/module conflicts
-- [ ] Commit changes: `git add . && git commit -m "Complete performance optimizations: DB indexes + caching"`
-- [ ] Run `npm run build` and test production build
-
-**Status: Frontend caching complete. Ready for testing & commit.**
+## Steps:
+- [x] 1. Create this TODO.md
+- [x] 2. Edit server/controllers/invoiceController-fixed.js: Added parseFloat/rounding/Number.toFixed in create/updateInvoice item maps. Syntax fixed.
+- [ ] 2. Edit server/controllers/invoiceController-fixed.js: Add robust Number/parseFloat + rounding(.toFixed(2)) in createInvoice/updateInvoice for all numerics (qty,rate,discount,gstRate,shipping,paidAmount). Handle empty items. Consistent status logic.
+- [ ] 3. Test: Create/update invoice via API/client, verify grandTotal/dueAmount
+- [ ] 4. Optional: client/src/pages/CreateInvoice.jsx - ensure numeric fields toFixed(2)
+- [ ] 5. Backup/replace server/controllers/invoiceController.js with fixed version
+- [ ] 6. Git commit changes
+- [ ] 7. Test full flow (PDF, list, etc.)
+- [ ] 8. Mark complete & attempt_completion
 

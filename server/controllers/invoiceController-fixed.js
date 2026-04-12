@@ -1,4 +1,4 @@
-`const Invoice = require('../models/Invoice');
+const Invoice = require('../models/Invoice');
 const Product = require('../models/Product');
 const Business = require('../models/Business');
 const StockAdjustment = require('../models/StockAdjustment');
@@ -52,21 +52,27 @@ exports.createInvoice = async (req, res, next) => {
     let subtotal = 0, totalDiscount = 0, totalCgst = 0, totalSgst = 0, totalIgst = 0;
 
     const processedItems = items.map(item => {
-      const lineTotal = item.quantity * item.rate;
-      const discountAmt = (lineTotal * (item.discount || 0)) / 100;
+      const qty = parseFloat(item.quantity || 0);
+      const rate = parseFloat(item.rate || 0);
+      const lineTotal = qty * rate;
+      const discount = parseFloat(item.discount || 0);
+      const discountAmt = (lineTotal * discount) / 100;
       const taxable = lineTotal - discountAmt;
-      const gst = calcGST(taxable, item.gstRate || 0, isInterState);
+      const gstRate = parseFloat(item.gstRate || 0);
+      const gst = calcGST(taxable, gstRate, isInterState);
       subtotal += taxable;
       totalDiscount += discountAmt;
       totalCgst += gst.cgst;
       totalSgst += gst.sgst;
       totalIgst += gst.igst;
-      return { ...item, cgst: gst.cgst, sgst: gst.sgst, igst: gst.igst, amount: taxable + gst.cgst + gst.sgst + gst.igst };
+      return { ...item, cgst: gst.cgst, sgst: gst.sgst, igst: gst.igst, amount: Number((taxable + gst.cgst + gst.sgst + gst.igst).toFixed(2)) };
     });
 
-    const totalTax = totalCgst + totalSgst + totalIgst;
-    const grandTotal = subtotal + totalTax + (rest.shipping || 0);
-    const dueAmount = grandTotal - (rest.paidAmount || 0);
+    const totalTax = Number((totalCgst + totalSgst + totalIgst).toFixed(2));
+    const shippingAmt = parseFloat(rest.shipping || 0);
+    const paidAmt = parseFloat(rest.paidAmount || 0);
+    const grandTotal = Number((subtotal + totalTax + shippingAmt).toFixed(2));
+    const dueAmount = Number((grandTotal - paidAmt).toFixed(2));
 
     const invoice = await Invoice.create({
       ...rest, business: business._id, invoiceNumber, items: processedItems,
@@ -95,18 +101,22 @@ exports.updateInvoice = async (req, res, next) => {
     const updateData = { ...simpleUpdate, isInterState };
     let subtotal = 0, totalDiscount = 0, totalCgst = 0, totalSgst = 0, totalIgst = 0;
 
-    if (items && Array.isArray(items)) {
+    if (items && Array.isArray(items) && items.length > 0) {
       const processedItems = items.map(item => {
-        const lineTotal = item.quantity * item.rate;
-        const discountAmt = (lineTotal * (item.discount || 0)) / 100;
+        const qty = parseFloat(item.quantity || 0);
+        const rate = parseFloat(item.rate || 0);
+        const lineTotal = qty * rate;
+        const discount = parseFloat(item.discount || 0);
+        const discountAmt = (lineTotal * discount) / 100;
         const taxable = lineTotal - discountAmt;
-        const gst = calcGST(taxable, item.gstRate || 0, isInterState);
+        const gstRate = parseFloat(item.gstRate || 0);
+        const gst = calcGST(taxable, gstRate, isInterState);
         subtotal += taxable;
         totalDiscount += discountAmt;
         totalCgst += gst.cgst;
         totalSgst += gst.sgst;
         totalIgst += gst.igst;
-        return { ...item, cgst: gst.cgst, sgst: gst.sgst, igst: gst.igst, amount: taxable + gst.cgst + gst.sgst + gst.igst };
+        return { ...item, cgst: gst.cgst, sgst: gst.sgst, igst: gst.igst, amount: Number((taxable + gst.cgst + gst.sgst + gst.igst).toFixed(2)) };
       });
       updateData.items = processedItems;
       updateData.subtotal = subtotal;
@@ -114,9 +124,11 @@ exports.updateInvoice = async (req, res, next) => {
       updateData.totalCgst = totalCgst;
       updateData.totalSgst = totalSgst;
       updateData.totalIgst = totalIgst;
-      updateData.totalTax = totalCgst + totalSgst + totalIgst;
-      updateData.grandTotal = subtotal + (totalCgst + totalSgst + totalIgst) + (updateData.shipping || 0);
-      updateData.dueAmount = updateData.grandTotal - (updateData.paidAmount || 0);
+      updateData.totalTax = Number((totalCgst + totalSgst + totalIgst).toFixed(2));
+      const shippingAmt = parseFloat(updateData.shipping || 0);
+      const paidAmt = parseFloat(updateData.paidAmount || 0);
+      updateData.grandTotal = Number((subtotal + updateData.totalTax + shippingAmt).toFixed(2));
+      updateData.dueAmount = Number((updateData.grandTotal - paidAmt).toFixed(2));
       updateData.status = updateData.dueAmount <= 0 ? 'paid' : updateData.paidAmount > 0 ? 'partial' : 'sent';
       updateData.isInterState = isInterState;
     }
