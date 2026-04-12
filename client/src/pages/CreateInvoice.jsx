@@ -26,6 +26,8 @@ export default function CreateInvoice() {
   });
   const [items, setItems] = useState([{ ...emptyItem }]);
 
+  const [originalItems, setOriginalItems] = useState([]);
+
   useEffect(() => {
     customerAPI.list({ limit: 100 }).then(r => setCustomers(r.data.data || []));
     productAPI.list({ limit: 100 }).then(r => setProducts(r.data.data || []));
@@ -33,7 +35,9 @@ export default function CreateInvoice() {
       invoiceAPI.get(id).then(r => {
         const inv = r.data;
         setForm({ customerName: inv.customerName, customerGstin: inv.customerGstin || '', customerAddress: inv.customerAddress || '', invoiceDate: inv.invoiceDate?.split('T')[0], dueDate: inv.dueDate?.split('T')[0] || '', paymentMode: inv.paymentMode, paidAmount: String(inv.paidAmount ?? ''), notes: inv.notes || '', shipping: String(inv.shipping ?? ''), customer: inv.customer?._id || '', status: inv.status || '' });
-        setItems(inv.items.map(i => ({ name: i.name, quantity: String(i.quantity), rate: String(i.rate), discount: String(i.discount ?? ''), gstRate: i.gstRate, unit: i.unit || 'pcs', product: i.product })));
+        const mapped = inv.items.map(i => ({ name: i.name, quantity: String(i.quantity), rate: String(i.rate), discount: String(i.discount ?? ''), gstRate: i.gstRate, unit: i.unit || 'pcs', product: i.product?._id || i.product || '' }));
+        setItems(mapped);
+        setOriginalItems(mapped);
         setIsInterState(inv.isInterState);
       });
     }
@@ -65,7 +69,16 @@ export default function CreateInvoice() {
   const grandTotal = parseFloat((totals.total + shipping).toFixed(2));
   const dueAmount = parseFloat((grandTotal - paidAmount).toFixed(2));
 
-  const getStock = (productId) => products.find(p => p._id === productId)?.stock ?? null;
+  // On edit: available = current stock + original qty already deducted
+  const getStock = (productId) => {
+    const product = products.find(p => p._id === productId);
+    if (!product) return null;
+    if (isEdit) {
+      const orig = originalItems.find(oi => (oi.product?._id || oi.product) === productId);
+      return product.stock + (orig ? parseInt(orig.quantity || 0) : 0);
+    }
+    return product.stock;
+  };
 
   const setItem = (i, field, value) => {
     const updated = [...items];
