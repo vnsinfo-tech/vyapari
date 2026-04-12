@@ -108,4 +108,5 @@ export const reminderAPI = {
 
 export const backupAPI = {
   export: () => api.get('/backup/export', { responseType: 'blob' }),
+  import: (data) => api.post('/backup/import', data),
 };
