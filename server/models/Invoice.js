@@ -12,7 +12,7 @@ const invoiceItemSchema = new mongoose.Schema({
   cgst: { type: Number, default: 0 },
   sgst: { type: Number, default: 0 },
   igst: { type: Number, default: 0 },
-  amount: { type: Number, required: true },
+  amount: { type: Number }, // calculated server-side
 });
 
 const invoiceSchema = new mongoose.Schema({
