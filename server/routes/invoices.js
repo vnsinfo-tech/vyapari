@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { getInvoices, getInvoice, createInvoice, updateInvoice, deleteInvoice, downloadPDF } = require('../controllers/invoiceController-fixed');
+const { getInvoices, getInvoice, createInvoice, updateInvoice, deleteInvoice, downloadPDF } = require('../controllers/invoiceController');
 const { protect, checkPermission } = require('../middleware/auth');
 
 router.use(protect, checkPermission('invoices'));
