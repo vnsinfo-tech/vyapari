@@ -73,8 +73,10 @@ exports.createInvoice = async (req, res, next) => {
 
 exports.updateInvoice = async (req, res, next) => {
   try {
-    const { items, isInterState = false, shipping, paidAmount, paymentMode, notes, customer, customerName, customerGstin, customerAddress, dueDate, invoiceDate, ...simpleUpdate } = req.body;
-    const updateData = { ...simpleUpdate, isInterState };
+    const { items, isInterState = false, ...rest } = req.body;
+    if (rest.customer === '') delete rest.customer;
+    
+    const updateData = { ...rest, isInterState };
     let subtotal = 0, totalDiscount = 0, totalCgst = 0, totalSgst = 0, totalIgst = 0;
 
     if (items && Array.isArray(items)) {
@@ -101,6 +103,9 @@ exports.updateInvoice = async (req, res, next) => {
       updateData.dueAmount = updateData.grandTotal - (updateData.paidAmount || 0);
       updateData.status = updateData.dueAmount <= 0 ? 'paid' : updateData.paidAmount > 0 ? 'partial' : 'sent';
       updateData.isInterState = isInterState;
+    } else {
+      // If items are not provided but shipping or paidAmount is, we'd need to recalculate from existing invoice
+      // But typically the frontend sends everything in a PUT request.
     }
 
     const invoice = await Invoice.findOneAndUpdate(
