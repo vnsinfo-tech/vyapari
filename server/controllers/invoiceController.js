@@ -4,6 +4,8 @@ const Business = require('../models/Business');
 const StockAdjustment = require('../models/StockAdjustment');
 const PDFDocument = require('pdfkit');
 
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const calcGST = (amount, gstRate, isInterState) => {
   const tax = (amount * gstRate) / 100;
   return isInterState
@@ -15,7 +17,7 @@ exports.getInvoices = async (req, res, next) => {
   try {
     const { page = 1, limit = 20, search, status, startDate, endDate, sort = '-invoiceDate' } = req.query;
     const query = { business: req.user.business._id, isDeleted: false };
-    if (search) query.$or = [{ invoiceNumber: new RegExp(search, 'i') }, { customerName: new RegExp(search, 'i') }];
+    if (search) query.$or = [{ invoiceNumber: new RegExp(escapeRegex(search), 'i') }, { customerName: new RegExp(escapeRegex(search), 'i') }];
     if (status) query.status = status;
     if (startDate || endDate) query.invoiceDate = {};
     if (startDate) query.invoiceDate.$gte = new Date(startDate);

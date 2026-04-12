@@ -2,11 +2,13 @@ const Purchase = require('../models/Purchase');
 const Product = require('../models/Product');
 const StockAdjustment = require('../models/StockAdjustment');
 
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 exports.getPurchases = async (req, res, next) => {
   try {
     const { page = 1, limit = 20, search, status, sort = '-purchaseDate' } = req.query;
     const query = { business: req.user.business._id, isDeleted: false };
-    if (search) query.supplierName = new RegExp(search, 'i');
+    if (search) query.supplierName = new RegExp(escapeRegex(search), 'i');
     if (status) query.status = status;
     const [data, total] = await Promise.all([
       Purchase.find(query).select('purchaseNumber billNumber supplierName grandTotal paidAmount dueAmount status purchaseDate').sort(sort).skip((page - 1) * limit).limit(+limit).populate('supplier', 'name').lean(),

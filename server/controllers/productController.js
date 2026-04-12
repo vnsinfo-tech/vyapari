@@ -1,11 +1,13 @@
 const Product = require('../models/Product');
 const StockAdjustment = require('../models/StockAdjustment');
 
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 exports.getProducts = async (req, res, next) => {
   try {
     const { page = 1, limit = 20, search, category, lowStock, sort = '-createdAt' } = req.query;
     const query = { business: req.user.business._id, isDeleted: false };
-    if (search) query.$or = [{ name: new RegExp(search, 'i') }, { sku: new RegExp(search, 'i') }, { barcode: new RegExp(search, 'i') }];
+    if (search) query.$or = [{ name: new RegExp(escapeRegex(search), 'i') }, { sku: new RegExp(escapeRegex(search), 'i') }, { barcode: new RegExp(escapeRegex(search), 'i') }];
     if (category) query.category = category;
     if (lowStock === 'true') query.$expr = { $lte: ['$stock', '$lowStockAlert'] };
     const [data, total] = await Promise.all([

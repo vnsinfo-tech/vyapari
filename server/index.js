@@ -7,6 +7,21 @@ const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
 const startCron = require('./utils/overdueJob');
+const authRoutes = require('./routes/auth');
+const dashboardRoutes = require('./routes/dashboard');
+const invoiceRoutes = require('./routes/invoices');
+const customerRoutes = require('./routes/customers');
+const supplierRoutes = require('./routes/suppliers');
+const productRoutes = require('./routes/products');
+const categoryRoutes = require('./routes/categories');
+const purchaseRoutes = require('./routes/purchases');
+const expenseRoutes = require('./routes/expenses');
+const paymentRoutes = require('./routes/payments');
+const reportRoutes = require('./routes/reports');
+const staffRoutes = require('./routes/staff');
+const settingsRoutes = require('./routes/settings');
+const reminderRoutes = require('./routes/reminders');
+const backupRoutes = require('./routes/backup');
 
 // Validate required env vars before starting
 const required = ['MONGO_URI', 'JWT_SECRET', 'JWT_REFRESH_SECRET'];
@@ -50,21 +65,21 @@ const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
 app.use('/api', limiter);
 
 // Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/dashboard', require('./routes/dashboard'));
-app.use('/api/invoices', require('./routes/invoices'));
-app.use('/api/customers', require('./routes/customers'));
-app.use('/api/suppliers', require('./routes/suppliers'));
-app.use('/api/products', require('./routes/products'));
-app.use('/api/categories', require('./routes/categories'));
-app.use('/api/purchases', require('./routes/purchases'));
-app.use('/api/expenses', require('./routes/expenses'));
-app.use('/api/payments', require('./routes/payments'));
-app.use('/api/reports', require('./routes/reports'));
-app.use('/api/staff', require('./routes/staff'));
-app.use('/api/settings', require('./routes/settings'));
-app.use('/api/reminders', require('./routes/reminders'));
-app.use('/api/backup', require('./routes/backup'));
+app.use('/api/auth', authRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/invoices', invoiceRoutes);
+app.use('/api/customers', customerRoutes);
+app.use('/api/suppliers', supplierRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/purchases', purchaseRoutes);
+app.use('/api/expenses', expenseRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/staff', staffRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/reminders', reminderRoutes);
+app.use('/api/backup', backupRoutes);
 
 app.use(errorHandler);
 
