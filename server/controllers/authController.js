@@ -1,8 +1,10 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const Business = require('../models/Business');
 
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const signToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE });
 const signRefresh = (id) => jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, { expiresIn: process.env.JWT_REFRESH_EXPIRE });
 
@@ -89,5 +91,46 @@ exports.resetPassword = async (req, res, next) => {
     user.resetPasswordExpire = undefined;
     await user.save();
     res.json({ message: 'Password reset successful' });
+  } catch (err) { next(err); }
+};
+
+exports.googleAuth = async (req, res, next) => {
+  try {
+    const { credential } = req.body;
+    if (!credential) return res.status(400).json({ message: 'Google credential required' });
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const { sub: googleId, email, name, picture } = ticket.getPayload();
+
+    let user = await User.findOne({ $or: [{ googleId }, { email }] }).populate('business');
+
+    if (!user) {
+      // New user — create user + business
+      user = await User.create({ name, email, googleId, avatar: picture, password: undefined });
+      const business = await Business.create({ owner: user._id, name: `${name}'s Business`, type: 'retailer' });
+      user.business = business._id;
+    } else if (!user.googleId) {
+      // Existing email user — link Google account
+      user.googleId = googleId;
+      user.avatar = picture;
+    }
+
+    const token = signToken(user._id);
+    const refreshToken = signRefresh(user._id);
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    // Re-populate business after save
+    await user.populate('business');
+
+    res.json({
+      token,
+      refreshToken,
+      user: { id: user._id, name: user.name, email: user.email, role: user.role, avatar: user.avatar },
+      business: user.business,
+    });
   } catch (err) { next(err); }
 };

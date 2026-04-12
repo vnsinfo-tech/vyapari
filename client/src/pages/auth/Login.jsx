@@ -3,7 +3,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
-import { login } from '../../store/slices/authSlice';
+import { login, googleLogin } from '../../store/slices/authSlice';
+import { GoogleLogin } from '@react-oauth/google';
 import toast from 'react-hot-toast';
 
 const schema = z.object({ email: z.string().email(), password: z.string().min(6) });
@@ -24,6 +25,16 @@ export default function Login() {
     }
   };
 
+  const handleGoogle = async (credentialResponse) => {
+    const result = await dispatch(googleLogin(credentialResponse.credential));
+    if (googleLogin.fulfilled.match(result)) {
+      toast.success('Welcome!');
+      navigate('/dashboard');
+    } else {
+      toast.error(result.payload);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-accent-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-md">
@@ -37,6 +48,24 @@ export default function Login() {
 
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Sign in</h2>
         <p className="text-sm text-gray-500 mb-6">Welcome back to your business dashboard</p>
+
+        {/* Google Login */}
+        <div className="mb-4 flex justify-center">
+          <GoogleLogin
+            onSuccess={handleGoogle}
+            onError={() => toast.error('Google login failed')}
+            width="100%"
+            text="signin_with"
+            shape="rectangular"
+            theme="outline"
+          />
+        </div>
+
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+          <span className="text-xs text-gray-400">or sign in with email</span>
+          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+        </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>

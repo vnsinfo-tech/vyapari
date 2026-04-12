@@ -5,6 +5,7 @@ const bust = (...prefixes) => prefixes.forEach(p => invalidateCache(p));
 export const authAPI = {
   login: (data) => api.post('/auth/login', data),
   register: (data) => api.post('/auth/register', data),
+  googleAuth: (credential) => api.post('/auth/google', { credential }),
   logout: () => api.post('/auth/logout'),
   getMe: () => api.get('/auth/me'),
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),

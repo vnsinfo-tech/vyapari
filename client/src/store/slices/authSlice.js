@@ -10,6 +10,15 @@ export const login = createAsyncThunk('auth/login', async (creds, { rejectWithVa
   } catch (err) { return rejectWithValue(err.response?.data?.message || 'Login failed'); }
 });
 
+export const googleLogin = createAsyncThunk('auth/googleLogin', async (credential, { rejectWithValue }) => {
+  try {
+    const { data } = await authAPI.googleAuth(credential);
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('refreshToken', data.refreshToken);
+    return data;
+  } catch (err) { return rejectWithValue(err.response?.data?.message || 'Google login failed'); }
+});
+
 export const register = createAsyncThunk('auth/register', async (creds, { rejectWithValue }) => {
   try {
     const { data } = await authAPI.register(creds);
@@ -42,6 +51,8 @@ const authSlice = createSlice({
     builder
       .addCase(login.pending, pending).addCase(login.rejected, rejected)
       .addCase(login.fulfilled, (state, { payload }) => { state.loading = false; state.user = payload.user; state.business = payload.business; state.token = payload.token; })
+      .addCase(googleLogin.pending, pending).addCase(googleLogin.rejected, rejected)
+      .addCase(googleLogin.fulfilled, (state, { payload }) => { state.loading = false; state.user = payload.user; state.business = payload.business; state.token = payload.token; })
       .addCase(register.pending, pending).addCase(register.rejected, rejected)
       .addCase(register.fulfilled, (state, { payload }) => { state.loading = false; state.user = payload.user; state.business = payload.business; state.token = payload.token; })
       .addCase(fetchMe.fulfilled, (state, { payload }) => { state.user = payload.user; state.business = payload.business; });
