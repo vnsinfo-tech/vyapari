@@ -130,21 +130,26 @@ exports.updatePurchase = async (req, res, next) => {
 
 exports.fixPurchases = async (req, res, next) => {
   try {
-    const purchases = await Purchase.find({ business: req.user.business._id, isDeleted: false, dueAmount: 0, grandTotal: { $gt: 0 } });
+    const purchases = await Purchase.find({ business: req.user.business._id, isDeleted: false, grandTotal: { $gt: 0 } });
     let fixed = 0;
     for (const p of purchases) {
       let subtotal = 0, totalTax = 0;
       for (const item of p.items) {
-        const amount = item.quantity * item.rate;
-        const tax = (amount * (item.gstRate || 0)) / 100;
+        const qty = parseFloat(item.quantity) || 0;
+        const rate = parseFloat(item.rate) || 0;
+        const gstRate = parseFloat(item.gstRate) || 0;
+        const amount = qty * rate;
         subtotal += amount;
-        totalTax += tax;
+        totalTax += amount * gstRate / 100;
       }
-      const grandTotal = subtotal + totalTax;
-      const paidAmount = p.paidAmount || 0;
+      const grandTotal = subtotal + totalTax || p.grandTotal;
+      const paidAmount = parseFloat(p.paidAmount) || 0;
       const dueAmount = grandTotal - paidAmount;
-      await Purchase.findByIdAndUpdate(p._id, { subtotal, totalTax, grandTotal, dueAmount, status: dueAmount <= 0 ? 'paid' : paidAmount > 0 ? 'partial' : 'pending' });
-      fixed++;
+      const status = dueAmount <= 0 ? 'paid' : paidAmount > 0 ? 'partial' : 'pending';
+      if (p.dueAmount !== dueAmount || p.grandTotal !== grandTotal || p.status !== status) {
+        await Purchase.findByIdAndUpdate(p._id, { subtotal, totalTax, grandTotal, paidAmount, dueAmount, status });
+        fixed++;
+      }
     }
     res.json({ message: `Fixed ${fixed} purchases` });
   } catch (err) { next(err); }

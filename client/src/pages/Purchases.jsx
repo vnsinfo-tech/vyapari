@@ -24,8 +24,10 @@ export default function Purchases() {
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { purchaseAPI.fixAmounts(); }, []);
-  useEffect(() => { fetch(); }, [page, search]);
+  useEffect(() => {
+    purchaseAPI.fixAmounts().finally(() => fetch());
+  }, []);
+  useEffect(() => { if (page > 1 || search) fetch(); }, [page, search]);
 
   const handleDelete = async () => {
     await purchaseAPI.delete(deleteId);
