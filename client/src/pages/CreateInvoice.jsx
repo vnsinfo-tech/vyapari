@@ -153,8 +153,8 @@ export default function CreateInvoice() {
                         </select>
                         <input className="input text-xs" value={item.name} onChange={e => setItem(i, 'name', e.target.value)} placeholder="Item name" required />
                       </td>
-                      <td className="py-2 px-1 w-16"><input type="number" min="1" className="input text-xs" value={item.quantity} onChange={e => setItem(i, 'quantity', e.target.value)} /></td>
-                      <td className="py-2 px-1 w-24"><input type="number" min="0" className="input text-xs" value={item.rate} onChange={e => setItem(i, 'rate', e.target.value)} /></td>
+                      <td className="py-2 px-1 w-16"><input type="number" min="1" step="0.01" className="input text-xs" value={item.quantity} onChange={e => setItem(i, 'quantity', e.target.value)} /></td>
+                      <td className="py-2 px-1 w-24"><input type="number" min="0" step="0.01" className="input text-xs" value={item.rate} onChange={e => setItem(i, 'rate', e.target.value)} /></td>
                       <td className="py-2 px-1 w-16"><input type="number" min="0" max="100" className="input text-xs" value={item.discount} onChange={e => setItem(i, 'discount', e.target.value)} /></td>
                       <td className="py-2 px-1 w-20">
                         <select className="input text-xs" value={item.gstRate} onChange={e => setItem(i, 'gstRate', +e.target.value)}>
@@ -188,11 +188,11 @@ export default function CreateInvoice() {
             </div>
             <div>
               <label className="label">Amount Paid (₹)</label>
-              <input type="number" min="0" className="input" value={form.paidAmount} onChange={e => setForm(f => ({ ...f, paidAmount: e.target.value }))} />
+              <input type="number" min="0" step="0.01" className="input" value={form.paidAmount} onChange={e => setForm(f => ({ ...f, paidAmount: e.target.value }))} />
             </div>
             <div>
               <label className="label">Shipping (₹)</label>
-              <input type="number" min="0" className="input" value={form.shipping} onChange={e => setForm(f => ({ ...f, shipping: e.target.value }))} />
+              <input type="number" min="0" step="0.01" className="input" value={form.shipping} onChange={e => setForm(f => ({ ...f, shipping: e.target.value }))} />
             </div>
             <div>
               <label className="label">Notes</label>
