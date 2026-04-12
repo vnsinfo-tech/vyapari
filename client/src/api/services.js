@@ -65,6 +65,7 @@ export const purchaseAPI = {
   create: async (data) => { const r = await api.post('/purchases', data); bust('/purchases', '/dashboard'); return r; },
   update: async (id, data) => { const r = await api.put(`/purchases/${id}`, data); bust('/purchases'); return r; },
   delete: async (id) => { const r = await api.delete(`/purchases/${id}`); bust('/purchases', '/dashboard'); return r; },
+  fixAmounts: () => api.post('/purchases/fix-amounts'),
 };
 
 export const expenseAPI = {
