@@ -60,7 +60,7 @@ export const categoryAPI = {
 };
 
 export const purchaseAPI = {
-  list: (params) => cachedGet('/purchases', { params }),
+  list: (params) => api.get('/purchases', { params }),
   get: (id) => cachedGet(`/purchases/${id}`),
   create: async (data) => { const r = await api.post('/purchases', data); bust('/purchases', '/dashboard'); return r; },
   update: async (id, data) => { const r = await api.put(`/purchases/${id}`, data); bust('/purchases'); return r; },
