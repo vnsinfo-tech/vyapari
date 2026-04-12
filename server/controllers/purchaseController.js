@@ -38,12 +38,13 @@ exports.createPurchase = async (req, res, next) => {
       return processed;
     });
     const grandTotal = subtotal + totalTax;
-    const dueAmount = grandTotal - (rest.paidAmount || 0);
+    const paidAmount = parseFloat(rest.paidAmount) || 0;
+    const dueAmount = grandTotal - paidAmount;
 
     const purchase = await Purchase.create({
       ...rest, business: req.user.business._id, items: processedItems,
-      subtotal, totalTax, grandTotal, dueAmount,
-      status: dueAmount <= 0 ? 'paid' : rest.paidAmount > 0 ? 'partial' : 'pending',
+      subtotal, totalTax, grandTotal, paidAmount, dueAmount,
+      status: dueAmount <= 0 ? 'paid' : paidAmount > 0 ? 'partial' : 'pending',
     });
 
     // Increase stock

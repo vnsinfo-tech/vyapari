@@ -51,8 +51,8 @@ export default function Purchases() {
                     <td className="py-3 px-2">{p.supplierName || p.supplier?.name || '-'}</td>
                     <td className="py-3 px-2 text-gray-500">{formatDate(p.purchaseDate)}</td>
                     <td className="py-3 px-2 font-semibold">{formatCurrency(p.grandTotal)}</td>
-                    <td className="py-3 px-2 text-green-600">{formatCurrency(p.paidAmount)}</td>
-                    <td className="py-3 px-2 text-red-500">{formatCurrency(p.dueAmount)}</td>
+                    <td className="py-3 px-2 text-green-600 dark:text-green-400">{formatCurrency(p.paidAmount ?? 0)}</td>
+                    <td className="py-3 px-2 text-red-500 dark:text-red-400">{formatCurrency(p.dueAmount ?? (p.grandTotal - (p.paidAmount ?? 0)))}</td>
                     <td className="py-3 px-2"><Badge status={p.status} /></td>
                     <td className="py-3 px-2"><div className="flex gap-1"><button onClick={() => navigate(`/purchases/${p._id}/edit`)} className="p-1.5 text-gray-400 hover:text-primary-600 rounded"><MdEdit size={16} /></button><button onClick={() => setDeleteId(p._id)} className="p-1.5 text-gray-400 hover:text-red-500 rounded"><MdDelete size={16} /></button></div></td>
                   </tr>
