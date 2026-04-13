@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { invoiceAPI } from '../api/services';
 import { Spinner } from '../components/ui';
 import { formatCurrency, formatDate } from '../utils';
-import { captureInvoicePDF, shareOnWhatsApp } from '../utils/invoiceUtils';
+import { shareOnWhatsApp } from '../utils/invoiceUtils';
 import { MdPrint, MdDownload, MdWhatsapp, MdArrowBack } from 'react-icons/md';
 import toast from 'react-hot-toast';
 
@@ -21,7 +21,6 @@ export default function PrintInvoice() {
   const navigate = useNavigate();
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     invoiceAPI.get(id).then(r => setInvoice(r.data)).finally(() => setLoading(false));
@@ -29,16 +28,11 @@ export default function PrintInvoice() {
 
   const handlePrint = () => window.print();
 
-  const handleDownloadPDF = async () => {
-    setDownloading(true);
-    try {
-      await captureInvoicePDF('invoice-print', `Invoice_${invoice.invoiceNumber}.pdf`);
-      toast.success('PDF downloaded');
-    } catch {
-      toast.error('Failed to download PDF');
-    } finally {
-      setDownloading(false);
-    }
+  const handleDownloadPDF = () => {
+    // Open the server-rendered HTML invoice in a new tab — same format as WhatsApp link
+    // User can Print → Save as PDF from there
+    const base = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    window.open(`${base}/public/invoices/${id}/pdf`, '_blank');
   };
 
   const handleWhatsApp = () => {
@@ -84,8 +78,8 @@ export default function PrintInvoice() {
         <button onClick={handlePrint} className="btn-secondary flex items-center gap-2 text-sm">
           <MdPrint size={16} /> Print
         </button>
-        <button onClick={handleDownloadPDF} disabled={downloading} className="btn-primary flex items-center gap-2 text-sm">
-          <MdDownload size={16} /> {downloading ? 'Downloading...' : 'Download PDF'}
+        <button onClick={handleDownloadPDF} className="btn-primary flex items-center gap-2 text-sm">
+          <MdDownload size={16} /> Download PDF
         </button>
         <button onClick={handleWhatsApp} className="flex items-center gap-2 text-sm bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
           <MdWhatsapp size={16} /> Share on WhatsApp
