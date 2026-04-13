@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { invoiceAPI } from '../api/services';
 import { Spinner } from '../components/ui';
 import { formatCurrency, formatDate } from '../utils';
-import { captureInvoicePDF } from '../utils/invoiceUtils';
+import { captureInvoicePDF, shareOnWhatsApp } from '../utils/invoiceUtils';
 import { MdPrint, MdDownload, MdWhatsapp, MdArrowBack } from 'react-icons/md';
 import toast from 'react-hot-toast';
 
@@ -43,22 +43,7 @@ export default function PrintInvoice() {
 
   const handleWhatsApp = () => {
     if (!invoice) return;
-    // Share the frontend public invoice page URL — no auth required, works for anyone with the link
-    const invoiceUrl = `${window.location.origin}/invoice/${invoice._id}`;
-    const phone = invoice.customer?.phone ? invoice.customer.phone.replace(/\D/g, '') : '';
-    const rs = (n) => `Rs.${(n || 0).toFixed(2)}`;
-    const msg = encodeURIComponent(
-      `Dear ${invoice.customerName},\n\nPlease find your invoice details below:\n\n` +
-      `Invoice No: *${invoice.invoiceNumber}*\n` +
-      `Date: ${formatDate(invoice.invoiceDate)}\n` +
-      `Due Date: ${formatDate(invoice.dueDate)}\n` +
-      `Total Amount: *${rs(invoice.grandTotal)}*\n` +
-      `Amount Due: *${rs(invoice.dueAmount)}*\n\n` +
-      `\uD83D\uDCC4 View Invoice: ${invoiceUrl}\n\n` +
-      `Thank you for your business!\n\u2014 ${invoice.business?.name || 'Vyapari'}`
-    );
-    const waUrl = phone ? `https://wa.me/${phone}?text=${msg}` : `https://wa.me/?text=${msg}`;
-    window.open(waUrl, '_blank');
+    shareOnWhatsApp(invoice);
   };
 
   if (loading) return <Spinner />;

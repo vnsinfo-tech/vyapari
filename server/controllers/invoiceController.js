@@ -2,8 +2,6 @@ const Invoice = require('../models/Invoice');
 const Product = require('../models/Product');
 const Business = require('../models/Business');
 const StockAdjustment = require('../models/StockAdjustment');
-const PDFDocument = require('pdfkit');
-const puppeteer = require('puppeteer');
 
 const calcGST = (amount, gstRate, isInterState) => {
   const tax = (amount * gstRate) / 100;
@@ -31,8 +29,19 @@ exports.getInvoices = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-exports.getPublicInvoice = async (req, res, next) => {
+exports.downloadPublicPDF = async (req, res, next) => {
   try {
+    const invoice = await Invoice.findOne({ _id: req.params.id, isDeleted: false })
+      .populate('business', 'name address phone email gstin')
+      .lean();
+    if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
+    // Serve printable HTML — user can Print → Save as PDF from browser
+    res.setHeader('Content-Type', 'text/html');
+    res.send(buildInvoiceHTML(invoice));
+  } catch (err) { next(err); }
+};
+
+exports.getPublicInvoice = async (req, res, next) => {  try {
     const invoice = await Invoice.findOne({ _id: req.params.id, isDeleted: false })
       .populate('business', 'name address phone email gstin')
       .lean();
@@ -232,22 +241,13 @@ exports.downloadPDF = async (req, res, next) => {
     const invoice = await Invoice.findOne({ _id: req.params.id, business: req.user.business._id })
       .populate('customer').populate('business').lean();
     if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
-
-    const html = buildInvoiceHTML(invoice);
-    const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '0', right: '0', bottom: '0', left: '0' } });
-    await browser.close();
-
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=invoice-${invoice.invoiceNumber}.pdf`);
-    res.send(pdfBuffer);
+    // Serve printable HTML — user can Print → Save as PDF from browser
+    res.setHeader('Content-Type', 'text/html');
+    res.send(buildInvoiceHTML(invoice));
   } catch (err) { next(err); }
 };
 
-function buildInvoiceHTML(invoice) {
-  const b = invoice.business || {};
+function buildInvoiceHTML(invoice) {  const b = invoice.business || {};
   const fmt = (n) => `\u20b9${(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
   const STATUS_COLORS = { paid: '#16a34a', partial: '#d97706', overdue: '#dc2626', sent: '#2563eb', draft: '#6b7280', cancelled: '#6b7280' };
@@ -398,3 +398,5 @@ function buildInvoiceHTML(invoice) {
   </div>
   </body></html>`;
 }
+
+exports.buildInvoiceHTML = buildInvoiceHTML;

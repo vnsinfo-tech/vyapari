@@ -7,8 +7,10 @@ const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
 const startCron = require('./utils/overdueJob');
+
 const authRoutes = require('./routes/auth');
 const dashboardRoutes = require('./routes/dashboard');
+const publicInvoiceRoutes = require('./routes/publicInvoices');
 const invoiceRoutes = require('./routes/invoices');
 const customerRoutes = require('./routes/customers');
 const supplierRoutes = require('./routes/suppliers');
@@ -23,19 +25,15 @@ const settingsRoutes = require('./routes/settings');
 const reminderRoutes = require('./routes/reminders');
 const backupRoutes = require('./routes/backup');
 
-// Validate required env vars before starting
 const required = ['MONGO_URI', 'JWT_SECRET', 'JWT_REFRESH_SECRET'];
 const missing = required.filter(k => !process.env[k]);
 if (missing.length) {
   console.error('FATAL: Missing required environment variables:', missing.join(', '));
-  // Don't exit — let the server start so Render health check passes,
-  // but API routes will return 503 until env vars are set
 }
 
 const app = express();
 connectDB().then(() => startCron()).catch(err => {
   console.error('DB connection failed:', err.message);
-  // Don't exit — log the error but keep server alive for Render
 });
 
 app.use(helmet());
@@ -49,7 +47,6 @@ const allowedOrigins = [
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
-    // Allow any vercel.app subdomain (covers preview deployments)
     if (origin.endsWith('.vercel.app')) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error(`CORS blocked: ${origin}`));
@@ -62,10 +59,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
 
 app.set('trust proxy', 1);
-const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
-app.use('/api', limiter);
+app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
 
-// Routes
+// Public routes — no auth required
+app.use('/api/public/invoices', publicInvoiceRoutes);
+
+// Protected routes
 app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/invoices', invoiceRoutes);
@@ -84,7 +83,6 @@ app.use('/api/backup', backupRoutes);
 
 app.use(errorHandler);
 
-// Health check — Render uses this to verify the service is up
 app.get('/', (req, res) => res.json({ status: 'ok' }));
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 

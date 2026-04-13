@@ -1,9 +1,6 @@
 const router = require('express').Router();
-const { getInvoices, getInvoice, createInvoice, updateInvoice, deleteInvoice, downloadPDF, getPublicInvoice } = require('../controllers/invoiceController');
+const { getInvoices, getInvoice, createInvoice, updateInvoice, deleteInvoice, downloadPDF } = require('../controllers/invoiceController');
 const { protect, checkPermission } = require('../middleware/auth');
-
-// Public route — no auth required (for WhatsApp shared links)
-router.get('/public/:id', getPublicInvoice);
 
 router.use(protect, checkPermission('invoices'));
 router.get('/', getInvoices);

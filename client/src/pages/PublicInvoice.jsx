@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { invoiceAPI } from '../api/services';
 import { Spinner } from '../components/ui';
@@ -21,6 +21,8 @@ export default function PublicInvoice() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [autoDownloaded, setAutoDownloaded] = useState(false);
+  const invoiceRef = useRef(null);
 
   useEffect(() => {
     invoiceAPI.getPublic(id)
@@ -29,18 +31,42 @@ export default function PublicInvoice() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  // Auto-download PDF once invoice is rendered
+  useEffect(() => {
+    if (!invoice || autoDownloaded) return;
+    // Wait for the DOM to fully render the invoice element
+    const timer = setTimeout(async () => {
+      setAutoDownloaded(true);
+      setDownloading(true);
+      try {
+        await captureInvoicePDF('invoice-print', `Invoice_${invoice.invoiceNumber}.pdf`);
+      } catch {
+        // Silent fail — user can still click the button manually
+      } finally {
+        setDownloading(false);
+      }
+    }, 800); // 800ms gives the browser time to fully paint the invoice
+    return () => clearTimeout(timer);
+  }, [invoice, autoDownloaded]);
+
   const handleDownloadPDF = async () => {
     setDownloading(true);
     try {
       await captureInvoicePDF('invoice-print', `Invoice_${invoice.invoiceNumber}.pdf`);
     } catch {
-      alert('Failed to download PDF');
+      alert('Failed to download PDF.');
     } finally {
       setDownloading(false);
     }
   };
 
-  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}><Spinner /></div>;
+  if (loading) return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', fontFamily: 'Arial, sans-serif', gap: '16px' }}>
+      <Spinner />
+      <div style={{ color: '#6b7280', fontSize: '14px' }}>Loading invoice...</div>
+    </div>
+  );
+
   if (error || !invoice) return (
     <div style={{ textAlign: 'center', padding: '60px', fontFamily: 'Arial, sans-serif', color: '#6b7280' }}>
       <div style={{ fontSize: '48px', marginBottom: '16px' }}>📄</div>
@@ -76,8 +102,12 @@ export default function PublicInvoice() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f3f4f6', padding: '24px 16px', fontFamily: 'Arial, sans-serif' }}>
-      {/* Download button */}
-      <div style={{ maxWidth: '794px', margin: '0 auto 16px', display: 'flex', justifyContent: 'flex-end' }}>
+
+      {/* Top bar */}
+      <div style={{ maxWidth: '794px', margin: '0 auto 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ fontSize: '13px', color: '#6b7280' }}>
+          {downloading ? '⏳ Preparing your PDF...' : '✅ PDF ready'}
+        </div>
         <button
           onClick={handleDownloadPDF}
           disabled={downloading}
@@ -87,7 +117,9 @@ export default function PublicInvoice() {
           {downloading ? 'Downloading...' : 'Download PDF'}
         </button>
       </div>
-      <div id="invoice-print" style={{ maxWidth: '794px', margin: '0 auto', background: '#fff', boxShadow: '0 1px 8px rgba(0,0,0,0.08)', borderRadius: '8px', overflow: 'hidden' }}>
+
+      {/* Invoice */}
+      <div id="invoice-print" ref={invoiceRef} style={{ maxWidth: '794px', margin: '0 auto', background: '#fff', boxShadow: '0 1px 8px rgba(0,0,0,0.08)', borderRadius: '8px', overflow: 'hidden' }}>
 
         <div style={{ height: '6px', background: '#16a34a' }} />
 
@@ -197,7 +229,6 @@ export default function PublicInvoice() {
                 </table>
               </div>
             )}
-
             <div style={{ minWidth: '230px' }}>
               {totalsRows.map(({ label, value, color }) => (
                 <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: '12px', borderBottom: '1px solid #f3f4f6' }}>

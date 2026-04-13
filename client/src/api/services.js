@@ -17,7 +17,7 @@ export const dashboardAPI = { get: () => cachedGet('/dashboard') };
 export const invoiceAPI = {
   list: (params) => api.get('/invoices', { params }),
   get: (id) => cachedGet(`/invoices/${id}`),
-  getPublic: (id) => api.get(`/invoices/public/${id}`),
+  getPublic: (id) => api.get(`/public/invoices/${id}`),
   create: async (data) => { const r = await api.post('/invoices', data); bust('/invoices', '/dashboard'); return r; },
   update: async (id, data) => { const r = await api.put(`/invoices/${id}`, data); bust('/invoices', '/dashboard'); return r; },
   delete: async (id) => { const r = await api.delete(`/invoices/${id}`); bust('/invoices', '/dashboard'); return r; },

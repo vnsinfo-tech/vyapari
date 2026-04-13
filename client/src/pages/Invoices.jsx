@@ -68,23 +68,7 @@ export default function Invoices() {
     } catch { toast.error('Failed to update status'); }
   };
 
-  const handleWhatsApp = (inv) => {
-    const pdfUrl = invoiceAPI.pdfUrl(inv._id);
-    const phone = inv.customer?.phone ? inv.customer.phone.replace(/\D/g, '') : '';
-    const rs = (n) => `Rs.${(n || 0).toFixed(2)}`;
-    const msg = encodeURIComponent(
-      `Dear ${inv.customerName},\n\nPlease find your invoice details below:\n\n` +
-      `Invoice No: *${inv.invoiceNumber}*\n` +
-      `Date: ${new Date(inv.invoiceDate).toLocaleDateString('en-IN')}\n` +
-      `Due Date: ${inv.dueDate ? new Date(inv.dueDate).toLocaleDateString('en-IN') : 'N/A'}\n` +
-      `Total Amount: *${rs(inv.grandTotal)}*\n` +
-      `Amount Due: *${rs(inv.dueAmount)}*\n\n` +
-      `\uD83D\uDCC4 Download Invoice: ${pdfUrl}\n\n` +
-      `Thank you for your business!`
-    );
-    const waUrl = phone ? `https://wa.me/${phone}?text=${msg}` : `https://wa.me/?text=${msg}`;
-    window.open(waUrl, '_blank');
-  };
+  const handleWhatsApp = (inv) => shareOnWhatsApp(inv);
 
 
   return (
