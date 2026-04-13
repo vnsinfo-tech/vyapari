@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { invoiceAPI, paymentAPI, reminderAPI } from '../api/services';
+import { useParams, useNavigate } from 'react-router-dom';
+import { invoiceAPI, paymentAPI } from '../api/services';
 import { Spinner, Badge, Modal } from '../components/ui';
 import { formatCurrency, formatDate } from '../utils';
-import { MdArrowBack, MdEdit, MdPrint, MdWhatsapp, MdPayment } from 'react-icons/md';
+import { shareOnWhatsApp } from '../utils/invoiceUtils';
+import { MdArrowBack, MdEdit, MdPrint, MdWhatsapp, MdPayment, MdDownload } from 'react-icons/md';
 import toast from 'react-hot-toast';
 import { PAYMENT_MODES } from '../constants';
 
@@ -53,11 +54,10 @@ export default function InvoiceDetail() {
     finally { setSaving(false); }
   };
 
-  const handleWhatsApp = async () => {
-    try {
-      const { data } = await reminderAPI.send({ invoiceId: id, channel: 'whatsapp' });
-      if (data.whatsappUrl) window.open(data.whatsappUrl, '_blank');
-    } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
+  const handleWhatsApp = () => shareOnWhatsApp(invoice);
+
+  const handleDownloadPDF = async () => {
+    navigate(`/invoices/${id}/print`);
   };
 
   if (loading) return <Spinner />;

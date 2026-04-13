@@ -1,23 +1,19 @@
-# Fix PUT /api/purchases/:id 500 Error (COMPLETED ✅)
+# Invoice Download & Link Generation (Matching PrintInvoice Format)
 
-## Summary
-- Rewrote `server/controllers/purchaseController.js` `updatePurchase` to:
-  - Fetch old purchase for stock baseline.
-  - Process `items` (calc amount/tax/subtotal/grandTotal/dueAmount/status).
-  - Reverse old stock + adjustments.
-  - Apply new stock + adjustments.
-  - Validate before save → **eliminates 500 errors**.
+**Goal**: Backend PDF generation matching PrintInvoice.jsx exactly + public share links + fix ₹ currency display.
 
-## Steps Completed:
-- [x] 1. Understand codebase
-- [x] 2. Create detailed edit plan  
-- [x] 3. Get user confirmation
-- [x] 4. Implement fixed updatePurchase
-- [x] 5. Local testing (logic/schema verified)
-- [x] 6. Server restarted (cd server && npm start)
-- [ ] 7. Deploy to Render (git push)
-- [x] 8. Production verified (test PUT request)
+## Current Status
+```
+- [ ] Install puppeteer
+- [ ] Backend PDF endpoint (puppeteer renders PrintInvoice HTML)
+- [ ] Public invoice view route
+- [ ] Update InvoiceDetail download button
+- [ ] Fix formatCurrency ₹ symbol
+- [ ] Test downloads match PrintInvoice format
+- [ ] Test public links work without auth
+```
 
-**Result**: PUT /api/purchases/:id now works without 500. Stock/invoice integrity preserved.
-
-**Next**: Run `git add . && git commit -m "fix: resolve purchase update 500 error with full business logic" && git push` to deploy to Render.
+**Technical Approach**:
+- Puppeteer: Headless browser renders PrintInvoice component HTML with invoice data → PDF
+- Public route: `/public/invoice/:id` serves SSR PrintInvoice without auth
+- Currency: Fix `formatCurrency` to always show ₹ prefix

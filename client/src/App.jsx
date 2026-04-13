@@ -20,6 +20,7 @@ import Invoices from './pages/Invoices';
 import InvoiceDetail from './pages/InvoiceDetail';
 import CreateInvoice from './pages/CreateInvoice';
 import PrintInvoice from './pages/PrintInvoice';
+import PublicInvoice from './pages/PublicInvoice';
 import Customers from './pages/Customers';
 import CustomerDetail from './pages/CustomerDetail';
 import Suppliers from './pages/Suppliers';
@@ -62,6 +63,8 @@ function AppRoutes() {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
+      {/* Public invoice view — no login required (for WhatsApp shared links) */}
+      <Route path="/invoice/:id" element={<PublicInvoice />} />
 
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
