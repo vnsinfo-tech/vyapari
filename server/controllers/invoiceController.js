@@ -241,9 +241,12 @@ exports.downloadPDF = async (req, res, next) => {
     const invoice = await Invoice.findOne({ _id: req.params.id, business: req.user.business._id })
       .populate('customer').populate('business').lean();
     if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
-    // Serve printable HTML — user can Print → Save as PDF from browser
-    res.setHeader('Content-Type', 'text/html');
-    res.send(buildInvoiceHTML(invoice));
+    const generateInvoicePDF = require('../utils/generateInvoicePDF');
+    const pdfBuffer = await generateInvoicePDF(invoice);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="Invoice_${invoice.invoiceNumber}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.send(pdfBuffer);
   } catch (err) { next(err); }
 };
 

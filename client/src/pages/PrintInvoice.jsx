@@ -5,7 +5,6 @@ import { Spinner } from '../components/ui';
 import { formatCurrency, formatDate } from '../utils';
 import { shareOnWhatsApp } from '../utils/invoiceUtils';
 import { MdPrint, MdDownload, MdWhatsapp, MdArrowBack } from 'react-icons/md';
-import toast from 'react-hot-toast';
 
 const STATUS_COLORS = {
   paid:      { bg: '#16a34a', text: '#fff' },
@@ -29,10 +28,14 @@ export default function PrintInvoice() {
   const handlePrint = () => window.print();
 
   const handleDownloadPDF = () => {
-    // Open the server-rendered HTML invoice in a new tab — same format as WhatsApp link
-    // User can Print → Save as PDF from there
+    // Download PDF from server — same format as WhatsApp link
+    const token = localStorage.getItem('token');
     const base = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-    window.open(`${base}/public/invoices/${id}/pdf`, '_blank');
+    const url = `${base}/invoices/${id}/pdf?token=${token}`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Invoice_${invoice.invoiceNumber}.pdf`;
+    a.click();
   };
 
   const handleWhatsApp = () => {
